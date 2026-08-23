@@ -1,0 +1,11 @@
+{
+  "name": "roadmap-tracker",
+  "version": "1.0.0",
+  "description": "Systems/Quant Engineering 11-Month Roadmap Tracker with Netlify Scheduled Mailer",
+  "main": "index.html",
+  "scripts": {},
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.0",
+    "nodemailer": "^6.9.14"
+  }
+}

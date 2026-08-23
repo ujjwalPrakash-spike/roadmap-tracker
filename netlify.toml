@@ -1,0 +1,9 @@
+[build]
+  publish = "."
+  functions = "netlify/functions"
+
+[functions."daily-mailer"]
+  schedule = "25 18 * * *" # 11:55 PM IST (UTC 18:25 daily)
+
+[functions."weekly-mailer"]
+  schedule = "30 16 * * 0" # 10:00 PM Sunday IST (UTC 16:30 Sunday)
