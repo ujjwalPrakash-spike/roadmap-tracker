@@ -3,35 +3,36 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Woolf Systems & Quant Tracker</title>
+  <title>Woolf // Systems & Quant Engine</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <!-- Supabase JS CDN -->
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- Supabase Client -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     :root {
-      --bg: #08070d;
-      --surface: #121019;
-      --surface-alt: #1a1726;
-      --surface-raised: #221e33;
-      --border: rgba(169, 150, 255, 0.14);
-      --border-strong: rgba(169, 150, 255, 0.28);
-      --text: #eae7f4;
-      --muted: #a29cb8;
-      --dim: #6e6884;
+      --bg: #07060c;
+      --surface: #100e18;
+      --surface-alt: #171424;
+      --surface-raised: #1f1b30;
+      --border: rgba(169, 150, 255, 0.12);
+      --border-strong: rgba(169, 150, 255, 0.32);
+      --text: #f0edf9;
+      --muted: #a6a0bd;
+      --dim: #706a88;
       --violet: #a996ff;
+      --violet-glow: rgba(169, 150, 255, 0.25);
       --blue: #6fa8ff;
       --amber: #ff9a63;
       --green: #7fd9ab;
-      --serif: 'Instrument Serif', serif;
+      --serif: 'Instrument Serif', Georgia, serif;
       --mono: 'JetBrains Mono', monospace;
       --sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     html { scroll-behavior: smooth; }
     body {
-      background: radial-gradient(ellipse 900px 600px at 85% -10%, rgba(111, 168, 255, 0.10), transparent),
-                  radial-gradient(ellipse 700px 500px at -10% 20%, rgba(157, 140, 255, 0.08), transparent),
+      background: radial-gradient(ellipse 900px 600px at 85% -10%, rgba(111, 168, 255, 0.12), transparent),
+                  radial-gradient(ellipse 700px 500px at -10% 20%, rgba(157, 140, 255, 0.10), transparent),
                   var(--bg);
       color: var(--text);
       font-family: var(--sans);
@@ -41,46 +42,57 @@
       flex-direction: column;
       overflow-x: hidden;
     }
-    ::selection { background: rgba(157, 140, 255, 0.3); color: #fff; }
+    ::selection { background: var(--violet-glow); color: #fff; }
+
+    /* Top glowing progress rail */
+    #progress-rail {
+      position: fixed;
+      top: 0; left: 0;
+      height: 3px;
+      width: 100%;
+      background: linear-gradient(90deg, var(--violet), var(--blue), var(--green));
+      z-index: 999;
+      box-shadow: 0 0 10px var(--violet-glow);
+    }
 
     /* Topbar */
     header.topbar {
       border-bottom: 1px solid var(--border);
-      background: rgba(18, 16, 25, 0.92);
-      backdrop-filter: blur(14px);
+      background: rgba(16, 14, 24, 0.85);
+      backdrop-filter: blur(16px);
       position: sticky;
       top: 0;
       z-index: 100;
-      padding: 10px 16px;
+      padding: 12px 20px;
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 12px;
     }
-    .brand { display: flex; align-items: baseline; gap: 8px; flex-shrink: 0; }
-    .brand-name { font-family: var(--serif); font-style: italic; font-size: 22px; color: var(--text); }
+    .brand { display: flex; align-items: baseline; gap: 10px; flex-shrink: 0; }
+    .brand-name { font-family: var(--serif); font-style: italic; font-size: 24px; color: var(--text); letter-spacing: -0.01em; }
     .brand-name em { color: var(--violet); }
-    .brand-tag { font-family: var(--mono); font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--blue); padding: 2px 6px; border-radius: 12px; border: 1px solid rgba(111, 168, 255, 0.3); }
+    .brand-tag { font-family: var(--mono); font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--blue); padding: 2px 7px; border-radius: 20px; border: 1px solid rgba(111, 168, 255, 0.35); }
 
     .header-stats { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-    .stat-pill { display: flex; align-items: center; gap: 6px; font-family: var(--mono); font-size: 11px; background: var(--surface-alt); padding: 4px 10px; border-radius: 8px; border: 1px solid var(--border); white-space: nowrap; }
+    .stat-pill { display: flex; align-items: center; gap: 6px; font-family: var(--mono); font-size: 11.5px; background: var(--surface-alt); padding: 5px 12px; border-radius: 20px; border: 1px solid var(--border); white-space: nowrap; transition: border-color .15s; }
     .stat-pill b { color: var(--text); font-weight: 600; }
-    .streak-fire { color: var(--amber); }
+    .streak-fire { color: var(--amber); filter: drop-shadow(0 0 4px rgba(255,154,99,0.5)); }
 
-    .auth-btn { background: var(--violet); color: #08070d; border: none; padding: 5px 12px; border-radius: 6px; font-weight: 600; font-size: 11.5px; font-family: var(--mono); cursor: pointer; transition: all .15s; white-space: nowrap; }
-    .auth-btn:hover { opacity: 0.9; }
-    .auth-btn.secondary { background: transparent; color: var(--muted); border: 1px solid var(--border); }
+    .auth-btn { background: linear-gradient(135deg, var(--violet), var(--blue)); color: #08070d; border: none; padding: 6px 14px; border-radius: 20px; font-weight: 700; font-size: 11.5px; font-family: var(--mono); cursor: pointer; transition: transform .15s, opacity .15s; white-space: nowrap; }
+    .auth-btn:hover { opacity: 0.95; transform: scale(1.02); }
+    .auth-btn.secondary { background: var(--surface-alt); color: var(--muted); border: 1px solid var(--border); }
     .auth-btn.secondary:hover { color: var(--text); border-color: var(--border-strong); }
 
     /* Layout */
-    .app-container { max-width: 1060px; width: 100%; margin: 16px auto 60px; padding: 0 16px; flex: 1; }
+    .app-container { max-width: 1100px; width: 100%; margin: 20px auto 80px; padding: 0 16px; flex: 1; }
 
     /* Navigation Tabs */
     .tabs-nav {
       display: flex;
       gap: 6px;
       border-bottom: 1px solid var(--border);
-      margin-bottom: 20px;
+      margin-bottom: 24px;
       padding-bottom: 2px;
       overflow-x: auto;
       scrollbar-width: none;
@@ -92,127 +104,137 @@
       border: none;
       color: var(--muted);
       font-family: var(--mono);
-      font-size: 12.5px;
-      padding: 8px 14px;
-      border-radius: 6px 6px 0 0;
+      font-size: 13px;
+      padding: 10px 16px;
+      border-radius: 8px 8px 0 0;
       cursor: pointer;
       white-space: nowrap;
-      transition: all .15s;
+      transition: all .2s cubic-bezier(0.4, 0, 0.2, 1);
       display: flex;
       align-items: center;
       gap: 6px;
       flex-shrink: 0;
     }
     .tab-btn:hover { color: var(--text); background: var(--surface-alt); }
-    .tab-btn.active { color: var(--violet); font-weight: 600; background: var(--surface); border-bottom: 2px solid var(--violet); }
+    .tab-btn.active { color: var(--violet); font-weight: 600; background: var(--surface); border-bottom: 2px solid var(--violet); box-shadow: 0 -4px 12px rgba(169, 150, 255, 0.08); }
 
-    /* Cards */
-    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 18px; box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3); }
-    .card-title { font-family: var(--serif); font-style: italic; font-size: 22px; color: var(--text); margin-bottom: 14px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+    /* Glass Cards */
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 22px; margin-bottom: 20px; box-shadow: 0 6px 30px rgba(0, 0, 0, 0.4); backdrop-filter: blur(10px); transition: border-color .2s; }
+    .card:hover { border-color: var(--border-strong); }
+    .card-title { font-family: var(--serif); font-style: italic; font-size: 23px; color: var(--text); margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
 
-    /* Form Controls */
+    /* Inputs */
     .input-row { display: flex; gap: 12px; margin-bottom: 12px; flex-wrap: wrap; }
     .input-group { flex: 1; min-width: 200px; }
-    .input-label { font-family: var(--mono); font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--dim); margin-bottom: 5px; display: block; }
-    .text-input { width: 100%; background: var(--surface-alt); border: 1px solid var(--border); border-radius: 8px; color: var(--text); padding: 9px 12px; font-family: var(--sans); font-size: 13.5px; outline: none; transition: border-color .15s; }
-    .text-input:focus { border-color: var(--violet); }
+    .input-label { font-family: var(--mono); font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--dim); margin-bottom: 6px; display: block; }
+    .text-input { width: 100%; background: var(--surface-alt); border: 1px solid var(--border); border-radius: 8px; color: var(--text); padding: 10px 14px; font-family: var(--sans); font-size: 14px; outline: none; transition: all .15s; }
+    .text-input:focus { border-color: var(--violet); box-shadow: 0 0 0 3px var(--violet-glow); }
 
-    /* Pills */
-    .pills-container { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
-    .pill { background: var(--surface-alt); border: 1px solid var(--border); color: var(--muted); font-size: 11.5px; font-family: var(--mono); padding: 5px 9px; border-radius: 6px; cursor: pointer; transition: all .15s; user-select: none; }
-    .pill:hover { color: var(--text); border-color: var(--border-strong); }
-    .pill.active { background: rgba(169, 150, 255, 0.2); border-color: var(--violet); color: var(--violet); font-weight: 600; }
-    .pill.diff-easy.active { background: rgba(127, 217, 171, 0.2); border-color: var(--green); color: var(--green); }
-    .pill.diff-hard.active { background: rgba(255, 154, 99, 0.2); border-color: var(--amber); color: var(--amber); }
+    /* Pill Selection */
+    .pills-container { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px; }
+    .pill { background: var(--surface-alt); border: 1px solid var(--border); color: var(--muted); font-size: 12px; font-family: var(--mono); padding: 6px 11px; border-radius: 8px; cursor: pointer; transition: all .15s; user-select: none; }
+    .pill:hover { color: var(--text); border-color: var(--border-strong); transform: translateY(-1px); }
+    .pill.active { background: rgba(169, 150, 255, 0.18); border-color: var(--violet); color: var(--violet); font-weight: 600; box-shadow: 0 0 10px rgba(169, 150, 255, 0.15); }
+    .pill.diff-easy.active { background: rgba(127, 217, 171, 0.18); border-color: var(--green); color: var(--green); box-shadow: 0 0 10px rgba(127, 217, 171, 0.15); }
+    .pill.diff-hard.active { background: rgba(255, 154, 99, 0.18); border-color: var(--amber); color: var(--amber); box-shadow: 0 0 10px rgba(255, 154, 99, 0.15); }
 
-    .btn-submit { background: linear-gradient(135deg, var(--violet), var(--blue)); color: #08070d; border: none; border-radius: 8px; padding: 9px 18px; font-weight: 700; font-family: var(--mono); font-size: 12.5px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: transform .15s, opacity .15s; }
-    .btn-submit:hover { opacity: 0.95; transform: translateY(-1px); }
+    .btn-submit { background: linear-gradient(135deg, var(--violet), var(--blue)); color: #08070d; border: none; border-radius: 8px; padding: 11px 22px; font-weight: 700; font-family: var(--mono); font-size: 13px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; transition: transform .15s, opacity .15s, box-shadow .15s; }
+    .btn-submit:hover { opacity: 0.95; transform: translateY(-1px); box-shadow: 0 4px 16px rgba(169, 150, 255, 0.3); }
 
-    /* Table */
-    .table-wrapper { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-    table { width: 100%; border-collapse: collapse; font-size: 12.5px; margin-top: 6px; }
-    th { text-align: left; padding: 8px 10px; font-family: var(--mono); font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--dim); border-bottom: 1px solid var(--border); }
-    td { padding: 10px; border-bottom: 1px solid var(--border); color: var(--muted); }
+    /* Tables */
+    .table-wrapper { overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 8px; border: 1px solid var(--border); }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th { text-align: left; padding: 10px 12px; font-family: var(--mono); font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--dim); background: var(--surface-alt); border-bottom: 1px solid var(--border); }
+    td { padding: 12px; border-bottom: 1px solid var(--border); color: var(--muted); }
+    tr:last-child td { border-bottom: none; }
     tr:hover td { background: var(--surface-alt); color: var(--text); }
-    .badge-diff { display: inline-block; padding: 2px 7px; border-radius: 4px; font-family: var(--mono); font-size: 10.5px; font-weight: 600; }
+    .badge-diff { display: inline-block; padding: 3px 8px; border-radius: 6px; font-family: var(--mono); font-size: 11px; font-weight: 600; }
     .badge-diff.Easy { background: rgba(127, 217, 171, 0.15); color: var(--green); }
     .badge-diff.Medium { background: rgba(111, 168, 255, 0.15); color: var(--blue); }
     .badge-diff.Hard { background: rgba(255, 154, 99, 0.15); color: var(--amber); }
-    .del-btn { background: transparent; border: none; color: var(--dim); cursor: pointer; font-size: 13px; padding: 2px 6px; border-radius: 4px; }
+    .del-btn { background: transparent; border: none; color: var(--dim); cursor: pointer; font-size: 14px; padding: 4px 8px; border-radius: 6px; }
     .del-btn:hover { color: var(--amber); background: rgba(255, 154, 99, 0.15); }
 
-    /* Resource Chains & Boxes */
-    .chain { display: flex; flex-wrap: wrap; gap: 0; margin: 12px 0 18px; }
-    .chain-item { flex: 1; min-width: 180px; border: 1px solid var(--border); background: var(--surface-alt); padding: 12px 14px; }
+    /* Resource Chains */
+    .chain { display: flex; flex-wrap: wrap; gap: 0; margin: 12px 0 20px; }
+    .chain-item { flex: 1; min-width: 200px; border: 1px solid var(--border); background: var(--surface-alt); padding: 14px 16px; }
     .chain-item:not(:last-child) { border-right: none; }
-    .chain-item:first-child { border-radius: 8px 0 0 8px; }
-    .chain-item:last-child { border-radius: 0 8px 8px 0; }
-    .chain-label { font-family: var(--mono); font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--dim); margin-bottom: 4px; }
+    .chain-item:first-child { border-radius: 10px 0 0 10px; }
+    .chain-item:last-child { border-radius: 0 10px 10px 0; }
+    .chain-label { font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--dim); margin-bottom: 4px; }
     .chain-item.primary .chain-label { color: var(--violet); }
     .chain-item.secondary .chain-label { color: var(--blue); }
     .chain-item.practice .chain-label { color: var(--green); }
-    .chain-name { font-size: 13px; color: var(--text); font-weight: 600; margin-bottom: 2px; }
-    .chain-detail { font-size: 11.5px; color: var(--dim); }
+    .chain-name { font-size: 13.5px; color: var(--text); font-weight: 600; margin-bottom: 2px; }
+    .chain-detail { font-size: 12px; color: var(--dim); }
 
     /* Month Cards */
-    .month-card { border: 1px solid var(--border); border-radius: 10px; background: var(--surface); overflow: hidden; margin-bottom: 10px; }
-    .month-head { display: flex; align-items: center; gap: 14px; padding: 14px 18px; cursor: pointer; background: var(--surface-alt); transition: background .15s; user-select: none; }
+    .month-card { border: 1px solid var(--border); border-radius: 12px; background: var(--surface); overflow: hidden; margin-bottom: 12px; transition: border-color .15s; }
+    .month-card:hover { border-color: var(--border-strong); }
+    .month-head { display: flex; align-items: center; gap: 14px; padding: 16px 20px; cursor: pointer; background: var(--surface-alt); transition: background .15s; user-select: none; }
     .month-head:hover { background: var(--surface-raised); }
-    .month-num { font-family: var(--serif); font-style: italic; font-size: 24px; color: var(--violet); width: 44px; flex-shrink: 0; }
+    .month-num { font-family: var(--serif); font-style: italic; font-size: 26px; color: var(--violet); width: 48px; flex-shrink: 0; }
     .month-title { flex: 1; }
-    .month-title b { display: block; font-size: 14px; color: var(--text); }
-    .month-title span { font-family: var(--mono); font-size: 11px; color: var(--dim); }
-    .month-chevron { font-family: var(--mono); color: var(--dim); font-size: 12px; transition: transform .2s; }
-    .month-card.open .month-chevron { transform: rotate(90deg); }
-    .month-body { display: none; padding: 14px 18px 18px; border-top: 1px solid var(--border); }
+    .month-title b { display: block; font-size: 15px; color: var(--text); }
+    .month-title span { font-family: var(--mono); font-size: 11.5px; color: var(--dim); }
+    .month-chevron { font-family: var(--mono); color: var(--dim); font-size: 13px; transition: transform .2s ease; }
+    .month-card.open .month-chevron { transform: rotate(90deg); color: var(--violet); }
+    .month-body { display: none; padding: 16px 20px 20px; border-top: 1px solid var(--border); }
     .month-card.open .month-body { display: block; }
     .mg-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
-    .mg-cell { padding: 10px 12px; border-radius: 6px; background: var(--surface-alt); border: 1px solid var(--border); }
-    .mg-cell .k { font-family: var(--mono); font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--blue); margin-bottom: 4px; }
-    .mg-cell .v { font-size: 12.5px; color: var(--muted); }
+    .mg-cell { padding: 12px 14px; border-radius: 8px; background: var(--surface-alt); border: 1px solid var(--border); }
+    .mg-cell .k { font-family: var(--mono); font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--blue); margin-bottom: 4px; }
+    .mg-cell .v { font-size: 13px; color: var(--muted); line-height: 1.45; }
     .mg-cell.deliverable .k { color: var(--violet); }
     .mg-cell.benchmark .k { color: var(--green); }
 
     /* Checkpoints */
-    .checkpoint { border: 1px solid var(--border-strong); border-radius: 10px; padding: 18px; margin-bottom: 14px; background: linear-gradient(135deg, rgba(157, 140, 255, 0.05), transparent); }
-    .checkpoint-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 10px; }
-    .checkpoint-head .m { font-family: var(--serif); font-style: italic; font-size: 24px; color: var(--violet); }
-    .checkpoint-head .l { font-family: var(--mono); font-size: 11px; color: var(--dim); text-transform: uppercase; }
-    .checkpoint ul { margin-left: 18px; font-size: 13px; color: var(--muted); }
+    .checkpoint { border: 1px solid var(--border-strong); border-radius: 12px; padding: 20px; margin-bottom: 16px; background: linear-gradient(135deg, rgba(157, 140, 255, 0.05), transparent); }
+    .checkpoint-head { display: flex; align-items: baseline; gap: 12px; margin-bottom: 12px; }
+    .checkpoint-head .m { font-family: var(--serif); font-style: italic; font-size: 26px; color: var(--violet); }
+    .checkpoint-head .l { font-family: var(--mono); font-size: 11px; color: var(--dim); text-transform: uppercase; letter-spacing: 0.1em; }
+    .checkpoint ul { margin-left: 18px; font-size: 13.5px; color: var(--muted); }
     .checkpoint ul li { margin-bottom: 6px; }
-    .verdict { margin-top: 12px; padding-top: 10px; border-top: 1px dashed var(--border); font-size: 12.5px; color: var(--amber); }
+    .verdict { margin-top: 14px; padding-top: 12px; border-top: 1px dashed var(--border); font-size: 13px; color: var(--amber); }
 
     /* Skip items */
-    .skip-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px; margin-top: 10px; }
-    .skip-item { border: 1px solid rgba(255, 154, 99, 0.25); background: rgba(255, 154, 99, 0.05); border-radius: 8px; padding: 12px; font-size: 12.5px; }
+    .skip-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; margin-top: 12px; }
+    .skip-item { border: 1px solid rgba(255, 154, 99, 0.25); background: rgba(255, 154, 99, 0.05); border-radius: 10px; padding: 14px; font-size: 13px; }
     .skip-item b { color: var(--amber); }
-    .skip-item .why { color: var(--dim); font-size: 11.5px; margin-top: 4px; }
+    .skip-item .why { color: var(--dim); font-size: 12px; margin-top: 5px; }
 
     /* Project Cards */
-    .project-card { background: var(--surface-alt); border: 1px solid var(--border); border-radius: 10px; padding: 16px; margin-bottom: 14px; }
-    .project-header { display: flex; justify-content: space-between; align-items: center; }
-    .project-name { font-family: var(--serif); font-style: italic; font-size: 18px; color: var(--text); }
-    .stage-item { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px dashed var(--border); font-size: 13px; }
+    .project-card { background: var(--surface-alt); border: 1px solid var(--border); border-radius: 12px; padding: 18px; margin-bottom: 16px; }
+    .project-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .project-name { font-family: var(--serif); font-style: italic; font-size: 19px; color: var(--text); }
+    .stage-item { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px dashed var(--border); font-size: 13.5px; }
     .stage-item:last-child { border-bottom: none; }
-    .stage-item input[type="checkbox"] { accent-color: var(--violet); width: 16px; height: 16px; cursor: pointer; }
+    .stage-item input[type="checkbox"] { accent-color: var(--violet); width: 18px; height: 18px; cursor: pointer; }
+
+    /* Toast Notification */
+    #toast { position: fixed; bottom: 24px; right: 24px; background: var(--surface-raised); border: 1px solid var(--border-strong); color: var(--text); padding: 12px 20px; border-radius: 10px; font-family: var(--mono); font-size: 12.5px; box-shadow: 0 10px 30px rgba(0,0,0,0.6); display: none; z-index: 9999; animation: slideUp 0.2s ease; }
+    @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
     /* Modal */
-    .modal-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.8); backdrop-filter: blur(8px); display: none; align-items: center; justify-content: center; z-index: 500; padding: 16px; }
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(8px); display: none; align-items: center; justify-content: center; z-index: 500; padding: 16px; }
     .modal-overlay.active { display: flex; }
-    .modal { background: var(--surface); border: 1px solid var(--border-strong); border-radius: 12px; padding: 24px; width: 100%; max-width: 440px; box-shadow: 0 10px 40px rgba(0,0,0,0.8); }
+    .modal { background: var(--surface); border: 1px solid var(--border-strong); border-radius: 14px; padding: 26px; width: 100%; max-width: 440px; box-shadow: 0 10px 40px rgba(0,0,0,0.8); }
 
     .hidden { display: none !important; }
 
     @media (max-width: 768px) {
       .chain { flex-direction: column; }
-      .chain-item, .chain-item:first-child, .chain-item:last-child { border-radius: 8px; border-right: 1px solid var(--border); margin-bottom: 6px; }
-      .brand-name { font-size: 19px; }
-      .app-container { padding: 0 10px; margin-top: 10px; }
+      .chain-item, .chain-item:first-child, .chain-item:last-child { border-radius: 10px; border-right: 1px solid var(--border); margin-bottom: 8px; }
+      .brand-name { font-size: 20px; }
+      .app-container { padding: 0 12px; margin-top: 14px; }
       .card { padding: 16px; }
+      .tab-btn { font-size: 12px; padding: 8px 12px; }
     }
   </style>
 </head>
 <body>
+
+  <div id="progress-rail"></div>
 
   <!-- Top Navigation -->
   <header class="topbar">
@@ -225,7 +247,7 @@
       <div class="stat-pill">Today: <b id="stat-today">0/3</b></div>
       <div class="stat-pill">CF: <b id="stat-cf">--</b></div>
       <div id="auth-header-btn">
-        <button class="auth-btn" onclick="openAuthModal()">Sign In</button>
+        <button class="auth-btn" onclick="openAuthModal('signup')">Sign Up / In</button>
       </div>
     </div>
   </header>
@@ -233,11 +255,11 @@
   <div class="app-container">
 
     <!-- Config Prompt (if keys not in localStorage) -->
-    <div id="config-banner" class="card" style="border-color:var(--border-strong); background:rgba(169,150,255,0.06); margin-bottom:16px;">
-      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+    <div id="config-banner" class="card" style="border-color:var(--border-strong); background:rgba(169,150,255,0.06); margin-bottom:18px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
         <div>
-          <div style="font-weight:600; color:var(--violet); font-size:13.5px;">⚡ Connect Supabase Cloud Sync & Mailers</div>
-          <div style="font-size:12px; color:var(--muted);">Store keys locally to sync problem logs & trigger scheduled emails.</div>
+          <div style="font-weight:600; color:var(--violet); font-size:14px;">⚡ Connect Supabase Cloud Sync & Scheduled Mailers</div>
+          <div style="font-size:12.5px; color:var(--muted);">Store your keys locally to enable cloud sync and daily/weekly email dispatches.</div>
         </div>
         <button class="auth-btn secondary" onclick="openConfigModal()">Setup Supabase Keys</button>
       </div>
@@ -246,9 +268,9 @@
     <!-- Navigation Tabs -->
     <div class="tabs-nav">
       <button class="tab-btn active" onclick="switchTab('log')">⚡ Quick Log</button>
-      <button class="tab-btn" onclick="switchTab('failures')">📋 Failure Log</button>
+      <button class="tab-btn" onclick="switchTab('failures')">📋 Failure Bank</button>
       <button class="tab-btn" onclick="switchTab('projects')">🏗️ 4 Projects</button>
-      <button class="tab-btn" onclick="switchTab('roadmap')">🗺️ 11-Month Roadmap</button>
+      <button class="tab-btn" onclick="switchTab('roadmap')">🗺️ 11-Month Plan</button>
       <button class="tab-btn" onclick="switchTab('resources')">📚 Books & Guides</button>
       <button class="tab-btn" onclick="switchTab('checkpoints')">🎯 Checkpoints & Rules</button>
       <button class="tab-btn" onclick="switchTab('stats')">📊 Stats</button>
@@ -259,7 +281,7 @@
       <div class="card">
         <div class="card-title">
           <span>Log DSA Problem</span>
-          <span style="font-family:var(--mono); font-size:11.5px; color:var(--violet);">NeetCode 250 → Google PYQ → Codeforces</span>
+          <span style="font-family:var(--mono); font-size:12px; color:var(--violet);">NeetCode 250 → Google PYQ → Codeforces</span>
         </div>
 
         <form id="log-form" onsubmit="handleProblemSubmit(event)">
@@ -269,7 +291,7 @@
               <input type="text" id="prob-name" class="text-input" placeholder="e.g. Trapping Rain Water" required autofocus autocomplete="off">
             </div>
             <div class="input-group" style="flex:1;">
-              <label class="input-label">Time (Mins)</label>
+              <label class="input-label">Time Spent (Mins)</label>
               <input type="number" id="prob-time" class="text-input" placeholder="e.g. 20" min="1">
             </div>
           </div>
@@ -304,9 +326,9 @@
             <div class="pill" data-val="Segment Tree / DSU" onclick="selectPill(this, 'pattern')">Segment Tree / DSU</div>
           </div>
 
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-top:12px;">
             <button type="submit" class="btn-submit">⚡ Submit Problem (Enter)</button>
-            <span style="font-size:11px; color:var(--dim); font-family:var(--mono);">C++ only</span>
+            <span style="font-size:11.5px; color:var(--dim); font-family:var(--mono);">All practice in C++ only</span>
           </div>
         </form>
       </div>
@@ -330,7 +352,7 @@
               </tr>
             </thead>
             <tbody id="problems-tbody">
-              <tr><td colspan="6" style="text-align:center; padding:20px; color:var(--dim);">No problems logged yet today. Minimum 3 problems daily!</td></tr>
+              <tr><td colspan="6" style="text-align:center; padding:22px; color:var(--dim);">No problems logged yet today. 3 problems daily minimum!</td></tr>
             </tbody>
           </table>
         </div>
@@ -342,7 +364,7 @@
       <div class="card">
         <div class="card-title">
           <span>Log a Failure / Missed Pattern</span>
-          <span style="font-size:11.5px; font-family:var(--mono); color:var(--amber);">Sunday Revision Bank</span>
+          <span style="font-size:12px; font-family:var(--mono); color:var(--amber);">Sunday Revision Bank</span>
         </div>
         <form id="failure-form" onsubmit="handleFailureSubmit(event)">
           <div class="input-row">
@@ -355,8 +377,8 @@
               <input type="text" id="fail-pattern" class="text-input" placeholder="e.g. Topological Sort / Cycle Detection" required>
             </div>
           </div>
-          <div class="input-group" style="margin-bottom:12px;">
-            <label class="input-label">Why did you miss it? (Root cause)</label>
+          <div class="input-group" style="margin-bottom:14px;">
+            <label class="input-label">Why did you miss it? (Root Cause Analysis)</label>
             <input type="text" id="fail-reason" class="text-input" placeholder="e.g. Missed edge case on multiple prefixes / wrong recursion state" required>
           </div>
           <button type="submit" class="btn-submit" style="background:linear-gradient(135deg, var(--amber), #ff5e62);">❌ Add to Failure Log</button>
@@ -376,8 +398,9 @@
       <div class="card">
         <div class="card-title">
           <span>4 Systems Projects Narrative</span>
-          <span style="font-size:11.5px; font-family:var(--mono); color:var(--blue);">Kernel → Network → Persistent Storage → Hot Path</span>
+          <span style="font-size:12px; font-family:var(--mono); color:var(--blue);">Kernel → Network → Persistent Storage → Hot Path</span>
         </div>
+        <p style="font-size:13px; color:var(--muted); margin-bottom:18px;">Click stages as you complete them. These feed directly into your weekly Sunday report.</p>
         <div id="projects-container">
           <!-- Populated by JS -->
         </div>
@@ -389,9 +412,9 @@
       <div class="card">
         <div class="card-title">
           <span>Month-by-Month Execution Plan</span>
-          <span style="font-size:11.5px; font-family:var(--mono); color:var(--violet);">Aug 2026 → Jul 2027 (~48 Weeks)</span>
+          <span style="font-size:12px; font-family:var(--mono); color:var(--violet);">Aug 2026 → Jul 2027 (~48 Weeks)</span>
         </div>
-        <p style="font-size:13px; color:var(--muted); margin-bottom:16px;">Click any month to expand full deliverables, benchmarks, and focus areas.</p>
+        <p style="font-size:13px; color:var(--muted); margin-bottom:16px;">Click any month to expand deliverables, benchmarks, and focus areas.</p>
         <div id="roadmap-months-grid">
           <!-- Populated by JS -->
         </div>
@@ -402,7 +425,7 @@
     <div id="tab-resources" class="tab-content hidden">
       <div class="card">
         <div class="card-title">Consolidated Systems Resource Chain</div>
-        <p style="font-size:13px; color:var(--muted); margin-bottom:18px;">Selective, high-ROI reading. Anything not on this list is lookup-only or explicitly out of scope.</p>
+        <p style="font-size:13.5px; color:var(--muted); margin-bottom:20px;">Selective, high-ROI reading. Anything not on this list is lookup-only or explicitly out of scope.</p>
 
         <h3 style="font-size:15px; color:var(--violet); margin-bottom:6px;">1. DSA Stack</h3>
         <div class="chain">
@@ -449,7 +472,7 @@
     <div id="tab-checkpoints" class="tab-content hidden">
       <div class="card">
         <div class="card-title">Daily Rituals (Non-Negotiable)</div>
-        <ul style="margin-left:20px; font-size:13px; color:var(--muted); line-height:1.7;">
+        <ul style="margin-left:20px; font-size:13.5px; color:var(--muted); line-height:1.8;">
           <li><b>3 problems/day minimum</b>, every day, no exceptions. All in <b>C++ only</b>.</li>
           <li><b>1 Codeforces Div2/3 contest/week</b> from month 3 onward, plus same-day upsolve.</li>
           <li><b>Sunday = revision day.</b> No new problems. Redo every failure on a blank editor.</li>
@@ -521,18 +544,18 @@
     <div id="tab-stats" class="tab-content hidden">
       <div class="card">
         <div class="card-title">Roadmap Overview & Stats</div>
-        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:12px; margin-bottom:20px;">
-          <div class="stat-pill" style="padding:14px; flex-direction:column; align-items:flex-start;">
-            <span style="color:var(--dim); font-size:10px; text-transform:uppercase;">Total Problems</span>
-            <b id="total-problems-stat" style="font-size:22px; color:var(--violet);">0</b>
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:14px; margin-bottom:22px;">
+          <div class="stat-pill" style="padding:16px; flex-direction:column; align-items:flex-start; border-radius:10px;">
+            <span style="color:var(--dim); font-size:10px; text-transform:uppercase; letter-spacing:0.08em;">Total Problems</span>
+            <b id="total-problems-stat" style="font-size:24px; color:var(--violet); margin-top:4px;">0</b>
           </div>
-          <div class="stat-pill" style="padding:14px; flex-direction:column; align-items:flex-start;">
-            <span style="color:var(--dim); font-size:10px; text-transform:uppercase;">Current Streak</span>
-            <b id="streak-stat" style="font-size:22px; color:var(--amber);">0 Days</b>
+          <div class="stat-pill" style="padding:16px; flex-direction:column; align-items:flex-start; border-radius:10px;">
+            <span style="color:var(--dim); font-size:10px; text-transform:uppercase; letter-spacing:0.08em;">Current Streak</span>
+            <b id="streak-stat" style="font-size:24px; color:var(--amber); margin-top:4px;">0 Days</b>
           </div>
-          <div class="stat-pill" style="padding:14px; flex-direction:column; align-items:flex-start;">
-            <span style="color:var(--dim); font-size:10px; text-transform:uppercase;">Failures Logged</span>
-            <b id="failures-stat" style="font-size:22px; color:#ff9a63;">0</b>
+          <div class="stat-pill" style="padding:16px; flex-direction:column; align-items:flex-start; border-radius:10px;">
+            <span style="color:var(--dim); font-size:10px; text-transform:uppercase; letter-spacing:0.08em;">Failures Logged</span>
+            <b id="failures-stat" style="font-size:24px; color:#ff9a63; margin-top:4px;">0</b>
           </div>
         </div>
 
@@ -541,19 +564,22 @@
             <label class="input-label">Codeforces Username</label>
             <input type="text" id="cf-handle-input" class="text-input" placeholder="e.g. ujjwal_prakash">
           </div>
-          <button class="auth-btn" style="padding:9px 16px;" onclick="saveCFHandle()">Sync CF Rating</button>
+          <button class="auth-btn" style="padding:10px 18px;" onclick="saveCFHandle()">Sync CF Rating</button>
         </div>
-        <div id="cf-details" style="margin-top:10px; font-family:var(--mono); font-size:12px; color:var(--muted);"></div>
+        <div id="cf-details" style="margin-top:12px; font-family:var(--mono); font-size:12.5px; color:var(--muted);"></div>
       </div>
     </div>
 
   </div>
 
+  <!-- TOAST NOTIFICATION -->
+  <div id="toast"></div>
+
   <!-- AUTH MODAL -->
   <div id="auth-modal" class="modal-overlay">
     <div class="modal">
-      <div class="card-title" style="margin-bottom:10px;">Account Access</div>
-      <p style="font-size:12.5px; color:var(--muted); margin-bottom:16px;">Sign in or sign up to sync your roadmap data with Supabase & email reports.</p>
+      <div class="card-title" id="auth-modal-title" style="margin-bottom:8px;">Account Access</div>
+      <p style="font-size:12.5px; color:var(--muted); margin-bottom:16px;">Sign in to sync your progress with Supabase & activate scheduled daily/weekly mailers.</p>
       
       <div class="input-group" style="margin-bottom:10px;">
         <label class="input-label">Email</label>
@@ -561,15 +587,15 @@
       </div>
       <div class="input-group" style="margin-bottom:16px;">
         <label class="input-label">Password</label>
-        <input type="password" id="auth-password" class="text-input" placeholder="••••••••" required>
+        <input type="password" id="auth-password" class="text-input" placeholder="Choose or enter password" required>
       </div>
 
-      <div style="display:flex; gap:8px;">
-        <button class="auth-btn" style="flex:1;" onclick="handleSignIn()">Sign In</button>
-        <button class="auth-btn secondary" style="flex:1;" onclick="handleSignUp()">Sign Up</button>
+      <div style="display:flex; gap:10px;">
+        <button class="auth-btn" style="flex:1;" onclick="handleSignUp()">Create Account</button>
+        <button class="auth-btn secondary" style="flex:1;" onclick="handleSignIn()">Sign In</button>
       </div>
-      <div style="text-align:center; margin-top:12px;">
-        <button style="background:none; border:none; color:var(--dim); font-size:11.5px; cursor:pointer;" onclick="closeAuthModal()">Close</button>
+      <div style="text-align:center; margin-top:14px;">
+        <button style="background:none; border:none; color:var(--dim); font-size:12px; cursor:pointer;" onclick="closeAuthModal()">Close</button>
       </div>
     </div>
   </div>
@@ -581,13 +607,13 @@
       <p style="font-size:12.5px; color:var(--muted); margin-bottom:16px;">Enter your Project URL & Anon Key from Supabase Project Settings → API.</p>
       <div class="input-group" style="margin-bottom:10px;">
         <label class="input-label">SUPABASE_URL</label>
-        <input type="text" id="cfg-url" class="text-input" placeholder="https://xyeivscujrvtnfnjxakc.supabase.co">
+        <input type="text" id="cfg-url" class="text-input" value="https://xyeivscujrvtnfnjxakc.supabase.co">
       </div>
       <div class="input-group" style="margin-bottom:16px;">
         <label class="input-label">SUPABASE_ANON_KEY</label>
-        <input type="text" id="cfg-key" class="text-input" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...">
+        <input type="text" id="cfg-key" class="text-input" placeholder="Paste your anon public key here">
       </div>
-      <div style="display:flex; gap:8px;">
+      <div style="display:flex; gap:10px;">
         <button class="auth-btn" style="flex:1;" onclick="saveConfig()">Save & Connect</button>
         <button class="auth-btn secondary" onclick="closeConfigModal()">Cancel</button>
       </div>
@@ -715,6 +741,13 @@
       renderAll();
     });
 
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      t.innerText = msg;
+      t.style.display = 'block';
+      setTimeout(() => { t.style.display = 'none'; }, 3000);
+    }
+
     function initSupabase() {
       const url = localStorage.getItem('WOOLF_SB_URL') || 'https://xyeivscujrvtnfnjxakc.supabase.co';
       const key = localStorage.getItem('WOOLF_SB_KEY');
@@ -725,7 +758,7 @@
           document.getElementById('config-banner').classList.add('hidden');
           checkAuthSession();
         } catch (e) {
-          console.warn("Supabase init notice:", e);
+          console.warn("Supabase init error:", e);
         }
       } else {
         if (!key) document.getElementById('config-banner').classList.remove('hidden');
@@ -740,12 +773,79 @@
         if (session) {
           currentUser = session.user;
           updateAuthUI(true);
+          await ensureUserInitialized();
           fetchCloudData();
         } else {
           updateAuthUI(false);
         }
       } catch (e) {
-        console.warn("Session check fallback:", e);
+        console.warn("Session check notice:", e);
+      }
+    }
+
+    // Ensures user profile and 4 projects exist even if SQL trigger did not fire
+    async function ensureUserInitialized() {
+      if (!sbClient || !currentUser) return;
+      try {
+        await sbClient.from('profiles').upsert({
+          id: currentUser.id,
+          email: currentUser.email
+        }, { onConflict: 'id' });
+
+        const { data: existingProjects } = await sbClient.from('projects').select('project_num').eq('user_id', currentUser.id);
+        if (!existingProjects || existingProjects.length === 0) {
+          await sbClient.from('projects').insert([
+            {
+              user_id: currentUser.id,
+              project_num: 1,
+              name: '01: Thread Pool + Benchmark Harness',
+              stages: [
+                { label: 'Fixed-size worker threads & blocking task queue', done: false },
+                { label: 'Task futures & return values', done: false },
+                { label: 'Throughput vs thread count benchmark', done: false },
+                { label: 'Contention testing with 100+ threads & graceful shutdown', done: false }
+              ]
+            },
+            {
+              user_id: currentUser.id,
+              project_num: 2,
+              name: '02: Event-Driven Multithreaded HTTP Server',
+              stages: [
+                { label: 'Single-connection blocking socket server', done: false },
+                { label: 'epoll event loop with non-blocking I/O', done: false },
+                { label: 'HTTP/1.1 parsing & keep-alive support', done: false },
+                { label: 'Worker dispatch to Project 1 Thread Pool', done: false },
+                { label: '5,000+ concurrent connection load test (wrk)', done: false }
+              ]
+            },
+            {
+              user_id: currentUser.id,
+              project_num: 3,
+              name: '03: Persistent Key-Value Storage Engine (LSM)',
+              stages: [
+                { label: 'In-memory Memtable & Write-Ahead Log (WAL)', done: false },
+                { label: 'SSTable disk flush with binary format', done: false },
+                { label: 'Basic compaction engine', done: false },
+                { label: 'Crash recovery from WAL replay test', done: false },
+                { label: 'Write throughput benchmark vs Redis/SQLite', done: false }
+              ]
+            },
+            {
+              user_id: currentUser.id,
+              project_num: 4,
+              name: '04: Low-Latency Matching Engine + Market Data Feed',
+              stages: [
+                { label: 'std::map order book correctness baseline', done: false },
+                { label: 'Price-time priority matching logic', done: false },
+                { label: 'Custom intrusive data structures (zero-alloc hot path)', done: false },
+                { label: 'Lock-free SPSC ring buffer for market data', done: false },
+                { label: 'p50/p99/p999 latency benchmarking & jitter profiling', done: false }
+              ]
+            }
+          ]);
+        }
+      } catch (err) {
+        console.warn("User auto-init notice:", err);
       }
     }
 
@@ -787,7 +887,7 @@
           seedDefaultProjects();
         }
       } catch (e) {
-        console.warn("Cloud sync fallback to local:", e);
+        console.warn("Cloud sync fallback:", e);
       }
       updateStatsCounters();
     }
@@ -859,6 +959,7 @@
       nameInput.value = '';
       timeInput.value = '';
       nameInput.focus();
+      showToast("Problem logged! 🔥");
 
       if (sbClient && currentUser) {
         try {
@@ -872,7 +973,7 @@
             logged_at: todayStr
           }]);
         } catch (err) {
-          console.warn("Could not insert problem to Supabase:", err);
+          console.warn("Insert to Supabase notice:", err);
         }
       }
     }
@@ -898,6 +999,7 @@
       nameEl.value = '';
       patternEl.value = '';
       reasonEl.value = '';
+      showToast("Added to Sunday Revision Bank 📋");
 
       if (sbClient && currentUser) {
         try {
@@ -909,7 +1011,7 @@
             reviewed: false
           }]);
         } catch (err) {
-          console.warn("Could not insert failure to Supabase:", err);
+          console.warn("Insert failure to Supabase notice:", err);
         }
       }
     }
@@ -924,7 +1026,7 @@
         try {
           await sbClient.from('problems').delete().eq('id', id).eq('user_id', currentUser.id);
         } catch (err) {
-          console.warn("Could not delete from Supabase:", err);
+          console.warn("Delete from Supabase notice:", err);
         }
       }
     }
@@ -939,7 +1041,7 @@
           try {
             await sbClient.from('projects').update({ stages: proj.stages }).eq('user_id', currentUser.id).eq('project_num', projectNum);
           } catch (err) {
-            console.warn("Could not update project stage in Supabase:", err);
+            console.warn("Update project stage notice:", err);
           }
         }
       }
@@ -991,7 +1093,7 @@
       const tbody = document.getElementById('problems-tbody');
 
       if (todayProblems.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:20px; color:var(--dim);">No problems logged yet today. 3 problems daily minimum!</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:22px; color:var(--dim);">No problems logged yet today. 3 problems daily minimum!</td></tr>`;
         return;
       }
 
@@ -1016,13 +1118,13 @@
       }
 
       container.innerHTML = localData.failures.map(f => `
-        <div style="background:var(--surface-alt); border:1px solid var(--border); border-left:3px solid var(--amber); border-radius:8px; padding:12px; margin-bottom:8px;">
+        <div style="background:var(--surface-alt); border:1px solid var(--border); border-left:3px solid var(--amber); border-radius:10px; padding:14px; margin-bottom:10px;">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-            <span style="font-weight:600; color:var(--text); font-size:13.5px;">${f.problem_name}</span>
+            <span style="font-weight:600; color:var(--text); font-size:14px;">${f.problem_name}</span>
             <span style="font-family:var(--mono); font-size:11px; color:var(--violet);">${f.pattern}</span>
           </div>
-          <p style="font-size:12.5px; color:var(--muted); margin-bottom:4px;"><b>Why missed:</b> ${f.reason}</p>
-          <div style="font-size:10.5px; font-family:var(--mono); color:var(--dim);">${f.logged_at}</div>
+          <p style="font-size:13px; color:var(--muted); margin-bottom:6px;"><b>Why missed:</b> ${f.reason}</p>
+          <div style="font-size:11px; font-family:var(--mono); color:var(--dim);">${f.logged_at}</div>
         </div>
       `).join('');
     }
@@ -1038,11 +1140,11 @@
 
         return `
           <div class="project-card">
-            <div class="project-header" style="margin-bottom:10px;">
+            <div class="project-header">
               <div class="project-name">${proj.name}</div>
-              <div style="font-family:var(--mono); font-size:11.5px; color:var(--violet);">${completed}/${stages.length} Stages (${pct}%)</div>
+              <div style="font-family:var(--mono); font-size:12px; color:var(--violet);">${completed}/${stages.length} Stages (${pct}%)</div>
             </div>
-            <div style="height:6px; width:100%; background:var(--surface); border-radius:3px; overflow:hidden; margin-bottom:12px;">
+            <div style="height:6px; width:100%; background:var(--surface); border-radius:3px; overflow:hidden; margin-bottom:14px;">
               <div style="height:100%; width:${pct}%; background:linear-gradient(90deg, var(--violet), var(--blue));"></div>
             </div>
             <div class="stages-list">
@@ -1173,6 +1275,7 @@
       localData.profile.cf_handle = handle;
       saveLocal();
       fetchCFRating(handle);
+      showToast(`CF Handle "${handle}" saved!`);
       if (sbClient && currentUser) {
         try {
           await sbClient.from('profiles').update({ cf_handle: handle }).eq('id', currentUser.id);
@@ -1204,13 +1307,20 @@
     }
 
     // --- Auth Modal & Handlers ---
-    function openAuthModal() { document.getElementById('auth-modal').classList.add('active'); }
+    function openAuthModal(mode) { 
+      document.getElementById('auth-modal').classList.add('active'); 
+      if (mode === 'signup') {
+        document.getElementById('auth-modal-title').innerText = "Create Account";
+      } else {
+        document.getElementById('auth-modal-title').innerText = "Sign In";
+      }
+    }
     function closeAuthModal() { document.getElementById('auth-modal').classList.remove('active'); }
     function openConfigModal() { document.getElementById('config-modal').classList.add('active'); }
     function closeConfigModal() { document.getElementById('config-modal').classList.remove('active'); }
 
     async function handleSignIn() {
-      if (!sbClient) return alert("Please configure Supabase keys first via 'Setup Keys'.");
+      if (!sbClient) return alert("Please configure Supabase keys first via 'Setup Supabase Keys'.");
       const email = document.getElementById('auth-email').value.trim();
       const password = document.getElementById('auth-password').value.trim();
       const { data, error } = await sbClient.auth.signInWithPassword({ email, password });
@@ -1219,22 +1329,25 @@
         currentUser = data.user;
         closeAuthModal();
         updateAuthUI(true);
+        await ensureUserInitialized();
         fetchCloudData();
+        showToast("Signed in successfully!");
       }
     }
 
     async function handleSignUp() {
-      if (!sbClient) return alert("Please configure Supabase keys first via 'Setup Keys'.");
+      if (!sbClient) return alert("Please configure Supabase keys first via 'Setup Supabase Keys'.");
       const email = document.getElementById('auth-email').value.trim();
       const password = document.getElementById('auth-password').value.trim();
       const { data, error } = await sbClient.auth.signUp({ email, password });
       if (error) alert(error.message);
       else {
-        alert("Account registered successfully! Logging in...");
         currentUser = data.user;
         closeAuthModal();
         updateAuthUI(true);
+        await ensureUserInitialized();
         fetchCloudData();
+        showToast("Account created & logged in! 🐺");
       }
     }
 
@@ -1242,14 +1355,15 @@
       if (sbClient) await sbClient.auth.signOut();
       currentUser = null;
       updateAuthUI(false);
+      showToast("Signed out.");
     }
 
     function updateAuthUI(isLoggedIn) {
       const container = document.getElementById('auth-header-btn');
-      if (isLoggedIn) {
-        container.innerHTML = `<button class="auth-btn secondary" onclick="handleSignOut()">Sign Out (${currentUser.email.split('@')[0]})</button>`;
+      if (isLoggedIn && currentUser) {
+        container.innerHTML = `<button class="auth-btn secondary" onclick="handleSignOut()">Sign Out (${(currentUser.email || '').split('@')[0]})</button>`;
       } else {
-        container.innerHTML = `<button class="auth-btn" onclick="openAuthModal()">Sign In</button>`;
+        container.innerHTML = `<button class="auth-btn" onclick="openAuthModal('signup')">Sign Up / In</button>`;
       }
     }
 
@@ -1261,6 +1375,7 @@
         localStorage.setItem('WOOLF_SB_KEY', key);
         closeConfigModal();
         initSupabase();
+        showToast("Supabase connected!");
       }
     }
   </script>
