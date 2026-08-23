@@ -2,11 +2,11 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Woolf Systems & Quant Tracker</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <!-- Supabase JS Client -->
+  <!-- Supabase JS CDN -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     :root {
@@ -25,9 +25,10 @@
       --green: #7fd9ab;
       --serif: 'Instrument Serif', serif;
       --mono: 'JetBrains Mono', monospace;
-      --sans: 'Inter', -apple-system, sans-serif;
+      --sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
     body {
       background: radial-gradient(ellipse 900px 600px at 85% -10%, rgba(111, 168, 255, 0.10), transparent),
                   radial-gradient(ellipse 700px 500px at -10% 20%, rgba(157, 140, 255, 0.08), transparent),
@@ -38,100 +39,177 @@
       min-height: 100vh;
       display: flex;
       flex-direction: column;
+      overflow-x: hidden;
     }
     ::selection { background: rgba(157, 140, 255, 0.3); color: #fff; }
 
-    /* Top bar */
+    /* Topbar */
     header.topbar {
       border-bottom: 1px solid var(--border);
-      background: rgba(18, 16, 25, 0.85);
-      backdrop-filter: blur(12px);
+      background: rgba(18, 16, 25, 0.92);
+      backdrop-filter: blur(14px);
       position: sticky;
       top: 0;
       z-index: 100;
-      padding: 12px 24px;
+      padding: 10px 16px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 16px;
+      gap: 12px;
     }
-    .brand { display: flex; align-items: baseline; gap: 12px; }
-    .brand-name { font-family: var(--serif); font-style: italic; font-size: 24px; color: var(--text); }
+    .brand { display: flex; align-items: baseline; gap: 8px; flex-shrink: 0; }
+    .brand-name { font-family: var(--serif); font-style: italic; font-size: 22px; color: var(--text); }
     .brand-name em { color: var(--violet); }
-    .brand-tag { font-family: var(--mono); font-size: 10px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--blue); padding: 2px 8px; border-radius: 20px; border: 1px solid rgba(111, 168, 255, 0.3); }
+    .brand-tag { font-family: var(--mono); font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--blue); padding: 2px 6px; border-radius: 12px; border: 1px solid rgba(111, 168, 255, 0.3); }
 
-    .header-stats { display: flex; align-items: center; gap: 18px; }
-    .stat-pill { display: flex; align-items: center; gap: 8px; font-family: var(--mono); font-size: 12px; background: var(--surface-alt); padding: 5px 12px; border-radius: 8px; border: 1px solid var(--border); }
+    .header-stats { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .stat-pill { display: flex; align-items: center; gap: 6px; font-family: var(--mono); font-size: 11px; background: var(--surface-alt); padding: 4px 10px; border-radius: 8px; border: 1px solid var(--border); white-space: nowrap; }
     .stat-pill b { color: var(--text); font-weight: 600; }
     .streak-fire { color: var(--amber); }
 
-    .auth-btn { background: var(--violet); color: #08070d; border: none; padding: 6px 14px; border-radius: 6px; font-weight: 600; font-size: 12px; font-family: var(--mono); cursor: pointer; transition: all .15s; }
-    .auth-btn:hover { opacity: 0.9; transform: translateY(-1px); }
+    .auth-btn { background: var(--violet); color: #08070d; border: none; padding: 5px 12px; border-radius: 6px; font-weight: 600; font-size: 11.5px; font-family: var(--mono); cursor: pointer; transition: all .15s; white-space: nowrap; }
+    .auth-btn:hover { opacity: 0.9; }
     .auth-btn.secondary { background: transparent; color: var(--muted); border: 1px solid var(--border); }
     .auth-btn.secondary:hover { color: var(--text); border-color: var(--border-strong); }
 
     /* Layout */
-    .app-container { max-width: 1000px; width: 100%; margin: 24px auto 60px; padding: 0 20px; flex: 1; }
+    .app-container { max-width: 1060px; width: 100%; margin: 16px auto 60px; padding: 0 16px; flex: 1; }
 
-    /* Tabs */
-    .tabs-nav { display: flex; gap: 8px; border-bottom: 1px solid var(--border); margin-bottom: 24px; padding-bottom: 2px; }
-    .tab-btn { background: transparent; border: none; color: var(--muted); font-family: var(--mono); font-size: 13px; padding: 8px 16px; border-radius: 6px 6px 0 0; cursor: pointer; position: relative; transition: all .15s; display: flex; align-items: center; gap: 6px; }
+    /* Navigation Tabs */
+    .tabs-nav {
+      display: flex;
+      gap: 6px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 20px;
+      padding-bottom: 2px;
+      overflow-x: auto;
+      scrollbar-width: none;
+      -webkit-overflow-scrolling: touch;
+    }
+    .tabs-nav::-webkit-scrollbar { display: none; }
+    .tab-btn {
+      background: transparent;
+      border: none;
+      color: var(--muted);
+      font-family: var(--mono);
+      font-size: 12.5px;
+      padding: 8px 14px;
+      border-radius: 6px 6px 0 0;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all .15s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
+    }
     .tab-btn:hover { color: var(--text); background: var(--surface-alt); }
     .tab-btn.active { color: var(--violet); font-weight: 600; background: var(--surface); border-bottom: 2px solid var(--violet); }
 
     /* Cards */
-    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 22px; margin-bottom: 20px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25); }
-    .card-title { font-family: var(--serif); font-style: italic; font-size: 22px; color: var(--text); margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; }
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 18px; box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3); }
+    .card-title { font-family: var(--serif); font-style: italic; font-size: 22px; color: var(--text); margin-bottom: 14px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
 
-    /* Form controls */
-    .input-row { display: flex; gap: 12px; margin-bottom: 14px; flex-wrap: wrap; }
-    .input-group { flex: 1; min-width: 240px; }
-    .input-label { font-family: var(--mono); font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--dim); margin-bottom: 6px; display: block; }
-    .text-input { width: 100%; background: var(--surface-alt); border: 1px solid var(--border); border-radius: 8px; color: var(--text); padding: 10px 14px; font-family: var(--sans); font-size: 14px; outline: none; transition: border-color .15s; }
+    /* Form Controls */
+    .input-row { display: flex; gap: 12px; margin-bottom: 12px; flex-wrap: wrap; }
+    .input-group { flex: 1; min-width: 200px; }
+    .input-label { font-family: var(--mono); font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--dim); margin-bottom: 5px; display: block; }
+    .text-input { width: 100%; background: var(--surface-alt); border: 1px solid var(--border); border-radius: 8px; color: var(--text); padding: 9px 12px; font-family: var(--sans); font-size: 13.5px; outline: none; transition: border-color .15s; }
     .text-input:focus { border-color: var(--violet); }
 
-    /* Pills Selector */
-    .pills-container { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px; }
-    .pill { background: var(--surface-alt); border: 1px solid var(--border); color: var(--muted); font-size: 12px; font-family: var(--mono); padding: 5px 10px; border-radius: 6px; cursor: pointer; transition: all .15s; user-select: none; }
+    /* Pills */
+    .pills-container { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+    .pill { background: var(--surface-alt); border: 1px solid var(--border); color: var(--muted); font-size: 11.5px; font-family: var(--mono); padding: 5px 9px; border-radius: 6px; cursor: pointer; transition: all .15s; user-select: none; }
     .pill:hover { color: var(--text); border-color: var(--border-strong); }
-    .pill.active { background: rgba(169, 150, 255, 0.18); border-color: var(--violet); color: var(--violet); font-weight: 600; }
-    .pill.diff-easy.active { background: rgba(127, 217, 171, 0.18); border-color: var(--green); color: var(--green); }
-    .pill.diff-hard.active { background: rgba(255, 154, 99, 0.18); border-color: var(--amber); color: var(--amber); }
+    .pill.active { background: rgba(169, 150, 255, 0.2); border-color: var(--violet); color: var(--violet); font-weight: 600; }
+    .pill.diff-easy.active { background: rgba(127, 217, 171, 0.2); border-color: var(--green); color: var(--green); }
+    .pill.diff-hard.active { background: rgba(255, 154, 99, 0.2); border-color: var(--amber); color: var(--amber); }
 
-    .btn-submit { background: linear-gradient(135deg, var(--violet), var(--blue)); color: #08070d; border: none; border-radius: 8px; padding: 10px 20px; font-weight: 700; font-family: var(--mono); font-size: 13px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; transition: transform .15s, opacity .15s; }
+    .btn-submit { background: linear-gradient(135deg, var(--violet), var(--blue)); color: #08070d; border: none; border-radius: 8px; padding: 9px 18px; font-weight: 700; font-family: var(--mono); font-size: 12.5px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: transform .15s, opacity .15s; }
     .btn-submit:hover { opacity: 0.95; transform: translateY(-1px); }
 
-    /* Tables */
-    .table-wrapper { overflow-x: auto; }
-    table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 8px; }
-    th { text-align: left; padding: 10px 12px; font-family: var(--mono); font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--dim); border-bottom: 1px solid var(--border); }
-    td { padding: 12px; border-bottom: 1px solid var(--border); color: var(--muted); }
+    /* Table */
+    .table-wrapper { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    table { width: 100%; border-collapse: collapse; font-size: 12.5px; margin-top: 6px; }
+    th { text-align: left; padding: 8px 10px; font-family: var(--mono); font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--dim); border-bottom: 1px solid var(--border); }
+    td { padding: 10px; border-bottom: 1px solid var(--border); color: var(--muted); }
     tr:hover td { background: var(--surface-alt); color: var(--text); }
-    .badge-diff { display: inline-block; padding: 2px 8px; border-radius: 4px; font-family: var(--mono); font-size: 11px; font-weight: 600; }
+    .badge-diff { display: inline-block; padding: 2px 7px; border-radius: 4px; font-family: var(--mono); font-size: 10.5px; font-weight: 600; }
     .badge-diff.Easy { background: rgba(127, 217, 171, 0.15); color: var(--green); }
     .badge-diff.Medium { background: rgba(111, 168, 255, 0.15); color: var(--blue); }
     .badge-diff.Hard { background: rgba(255, 154, 99, 0.15); color: var(--amber); }
+    .del-btn { background: transparent; border: none; color: var(--dim); cursor: pointer; font-size: 13px; padding: 2px 6px; border-radius: 4px; }
+    .del-btn:hover { color: var(--amber); background: rgba(255, 154, 99, 0.15); }
 
-    .del-btn { background: transparent; border: none; color: var(--dim); cursor: pointer; font-size: 14px; padding: 4px 8px; border-radius: 4px; }
-    .del-btn:hover { color: var(--amber); background: rgba(255, 154, 99, 0.1); }
+    /* Resource Chains & Boxes */
+    .chain { display: flex; flex-wrap: wrap; gap: 0; margin: 12px 0 18px; }
+    .chain-item { flex: 1; min-width: 180px; border: 1px solid var(--border); background: var(--surface-alt); padding: 12px 14px; }
+    .chain-item:not(:last-child) { border-right: none; }
+    .chain-item:first-child { border-radius: 8px 0 0 8px; }
+    .chain-item:last-child { border-radius: 0 8px 8px 0; }
+    .chain-label { font-family: var(--mono); font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--dim); margin-bottom: 4px; }
+    .chain-item.primary .chain-label { color: var(--violet); }
+    .chain-item.secondary .chain-label { color: var(--blue); }
+    .chain-item.practice .chain-label { color: var(--green); }
+    .chain-name { font-size: 13px; color: var(--text); font-weight: 600; margin-bottom: 2px; }
+    .chain-detail { font-size: 11.5px; color: var(--dim); }
 
-    /* Projects Accordion */
-    .project-card { background: var(--surface-alt); border: 1px solid var(--border); border-radius: 10px; padding: 18px; margin-bottom: 14px; }
-    .project-header { display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
-    .project-name { font-family: var(--serif); font-style: italic; font-size: 19px; color: var(--text); }
+    /* Month Cards */
+    .month-card { border: 1px solid var(--border); border-radius: 10px; background: var(--surface); overflow: hidden; margin-bottom: 10px; }
+    .month-head { display: flex; align-items: center; gap: 14px; padding: 14px 18px; cursor: pointer; background: var(--surface-alt); transition: background .15s; user-select: none; }
+    .month-head:hover { background: var(--surface-raised); }
+    .month-num { font-family: var(--serif); font-style: italic; font-size: 24px; color: var(--violet); width: 44px; flex-shrink: 0; }
+    .month-title { flex: 1; }
+    .month-title b { display: block; font-size: 14px; color: var(--text); }
+    .month-title span { font-family: var(--mono); font-size: 11px; color: var(--dim); }
+    .month-chevron { font-family: var(--mono); color: var(--dim); font-size: 12px; transition: transform .2s; }
+    .month-card.open .month-chevron { transform: rotate(90deg); }
+    .month-body { display: none; padding: 14px 18px 18px; border-top: 1px solid var(--border); }
+    .month-card.open .month-body { display: block; }
+    .mg-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+    .mg-cell { padding: 10px 12px; border-radius: 6px; background: var(--surface-alt); border: 1px solid var(--border); }
+    .mg-cell .k { font-family: var(--mono); font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--blue); margin-bottom: 4px; }
+    .mg-cell .v { font-size: 12.5px; color: var(--muted); }
+    .mg-cell.deliverable .k { color: var(--violet); }
+    .mg-cell.benchmark .k { color: var(--green); }
+
+    /* Checkpoints */
+    .checkpoint { border: 1px solid var(--border-strong); border-radius: 10px; padding: 18px; margin-bottom: 14px; background: linear-gradient(135deg, rgba(157, 140, 255, 0.05), transparent); }
+    .checkpoint-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 10px; }
+    .checkpoint-head .m { font-family: var(--serif); font-style: italic; font-size: 24px; color: var(--violet); }
+    .checkpoint-head .l { font-family: var(--mono); font-size: 11px; color: var(--dim); text-transform: uppercase; }
+    .checkpoint ul { margin-left: 18px; font-size: 13px; color: var(--muted); }
+    .checkpoint ul li { margin-bottom: 6px; }
+    .verdict { margin-top: 12px; padding-top: 10px; border-top: 1px dashed var(--border); font-size: 12.5px; color: var(--amber); }
+
+    /* Skip items */
+    .skip-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px; margin-top: 10px; }
+    .skip-item { border: 1px solid rgba(255, 154, 99, 0.25); background: rgba(255, 154, 99, 0.05); border-radius: 8px; padding: 12px; font-size: 12.5px; }
+    .skip-item b { color: var(--amber); }
+    .skip-item .why { color: var(--dim); font-size: 11.5px; margin-top: 4px; }
+
+    /* Project Cards */
+    .project-card { background: var(--surface-alt); border: 1px solid var(--border); border-radius: 10px; padding: 16px; margin-bottom: 14px; }
+    .project-header { display: flex; justify-content: space-between; align-items: center; }
+    .project-name { font-family: var(--serif); font-style: italic; font-size: 18px; color: var(--text); }
     .stage-item { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px dashed var(--border); font-size: 13px; }
     .stage-item:last-child { border-bottom: none; }
     .stage-item input[type="checkbox"] { accent-color: var(--violet); width: 16px; height: 16px; cursor: pointer; }
 
     /* Modal */
-    .modal-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.75); backdrop-filter: blur(6px); display: none; align-items: center; justify-content: center; z-index: 500; }
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.8); backdrop-filter: blur(8px); display: none; align-items: center; justify-content: center; z-index: 500; padding: 16px; }
     .modal-overlay.active { display: flex; }
-    .modal { background: var(--surface); border: 1px solid var(--border-strong); border-radius: 14px; padding: 28px; width: 90%; max-width: 440px; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6); }
-
-    /* Config banner */
-    .config-banner { background: rgba(169, 150, 255, 0.08); border: 1px solid var(--border-strong); border-radius: 10px; padding: 16px 20px; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center; }
+    .modal { background: var(--surface); border: 1px solid var(--border-strong); border-radius: 12px; padding: 24px; width: 100%; max-width: 440px; box-shadow: 0 10px 40px rgba(0,0,0,0.8); }
 
     .hidden { display: none !important; }
+
+    @media (max-width: 768px) {
+      .chain { flex-direction: column; }
+      .chain-item, .chain-item:first-child, .chain-item:last-child { border-radius: 8px; border-right: 1px solid var(--border); margin-bottom: 6px; }
+      .brand-name { font-size: 19px; }
+      .app-container { padding: 0 10px; margin-top: 10px; }
+      .card { padding: 16px; }
+    }
   </style>
 </head>
 <body>
@@ -140,10 +218,10 @@
   <header class="topbar">
     <div class="brand">
       <div class="brand-name">Woolf <em>Tracker</em></div>
-      <div class="brand-tag">Systems & Quant Engine</div>
+      <div class="brand-tag">Systems & Quant</div>
     </div>
     <div class="header-stats">
-      <div class="stat-pill"><span class="streak-fire">🔥</span> Streak: <b id="stat-streak">0</b> days</div>
+      <div class="stat-pill"><span class="streak-fire">🔥</span> <b id="stat-streak">0</b>d</div>
       <div class="stat-pill">Today: <b id="stat-today">0/3</b></div>
       <div class="stat-pill">CF: <b id="stat-cf">--</b></div>
       <div id="auth-header-btn">
@@ -154,21 +232,26 @@
 
   <div class="app-container">
 
-    <!-- Config Prompt (if keys not embedded) -->
-    <div id="config-banner" class="config-banner hidden">
-      <div>
-        <div style="font-weight: 600; color: var(--violet); font-size: 14px; margin-bottom: 2px;">⚡ Connect your Supabase Project</div>
-        <div style="font-size: 12px; color: var(--muted);">Enter your Supabase URL & Anon Key to sync data & enable scheduled email reports.</div>
+    <!-- Config Prompt (if keys not in localStorage) -->
+    <div id="config-banner" class="card" style="border-color:var(--border-strong); background:rgba(169,150,255,0.06); margin-bottom:16px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+        <div>
+          <div style="font-weight:600; color:var(--violet); font-size:13.5px;">⚡ Connect Supabase Cloud Sync & Mailers</div>
+          <div style="font-size:12px; color:var(--muted);">Store keys locally to sync problem logs & trigger scheduled emails.</div>
+        </div>
+        <button class="auth-btn secondary" onclick="openConfigModal()">Setup Supabase Keys</button>
       </div>
-      <button class="auth-btn secondary" onclick="openConfigModal()">Setup Keys</button>
     </div>
 
-    <!-- Tabs Navigation -->
+    <!-- Navigation Tabs -->
     <div class="tabs-nav">
-      <button class="tab-btn active" onclick="switchTab('log')">⚡ Quick Log <span style="font-size:10px; color:var(--dim);">(Ctrl+L)</span></button>
-      <button class="tab-btn" onclick="switchTab('failures')">📋 Failure Log <span style="font-size:10px; color:var(--dim);">(Ctrl+F)</span></button>
-      <button class="tab-btn" onclick="switchTab('projects')">🏗️ 4 Projects <span style="font-size:10px; color:var(--dim);">(Ctrl+P)</span></button>
-      <button class="tab-btn" onclick="switchTab('stats')">📊 Stats & Review <span style="font-size:10px; color:var(--dim);">(Ctrl+S)</span></button>
+      <button class="tab-btn active" onclick="switchTab('log')">⚡ Quick Log</button>
+      <button class="tab-btn" onclick="switchTab('failures')">📋 Failure Log</button>
+      <button class="tab-btn" onclick="switchTab('projects')">🏗️ 4 Projects</button>
+      <button class="tab-btn" onclick="switchTab('roadmap')">🗺️ 11-Month Roadmap</button>
+      <button class="tab-btn" onclick="switchTab('resources')">📚 Books & Guides</button>
+      <button class="tab-btn" onclick="switchTab('checkpoints')">🎯 Checkpoints & Rules</button>
+      <button class="tab-btn" onclick="switchTab('stats')">📊 Stats</button>
     </div>
 
     <!-- TAB 1: QUICK LOG -->
@@ -176,18 +259,18 @@
       <div class="card">
         <div class="card-title">
           <span>Log DSA Problem</span>
-          <span style="font-family:var(--mono); font-size:12px; color:var(--violet);">Goal: NeetCode 250 → Google PYQ → CF</span>
+          <span style="font-family:var(--mono); font-size:11.5px; color:var(--violet);">NeetCode 250 → Google PYQ → Codeforces</span>
         </div>
 
         <form id="log-form" onsubmit="handleProblemSubmit(event)">
           <div class="input-row">
-            <div class="input-group" style="flex: 2;">
+            <div class="input-group" style="flex:2;">
               <label class="input-label">Problem Name</label>
               <input type="text" id="prob-name" class="text-input" placeholder="e.g. Trapping Rain Water" required autofocus autocomplete="off">
             </div>
-            <div class="input-group" style="flex: 1;">
-              <label class="input-label">Time Spent (Mins)</label>
-              <input type="number" id="prob-time" class="text-input" placeholder="e.g. 25" min="1">
+            <div class="input-group" style="flex:1;">
+              <label class="input-label">Time (Mins)</label>
+              <input type="number" id="prob-time" class="text-input" placeholder="e.g. 20" min="1">
             </div>
           </div>
 
@@ -199,7 +282,7 @@
             <div class="pill" data-val="other" onclick="selectPill(this, 'source')">Other</div>
           </div>
 
-          <label class="input-label">Difficulty (Shortcut: 1 / 2 / 3)</label>
+          <label class="input-label">Difficulty (Key: 1 / 2 / 3)</label>
           <div class="pills-container" id="diff-pills">
             <div class="pill diff-easy" data-val="Easy" onclick="selectPill(this, 'diff')">Easy [1]</div>
             <div class="pill active" data-val="Medium" onclick="selectPill(this, 'diff')">Medium [2]</div>
@@ -221,9 +304,9 @@
             <div class="pill" data-val="Segment Tree / DSU" onclick="selectPill(this, 'pattern')">Segment Tree / DSU</div>
           </div>
 
-          <div style="display:flex; justify-content: space-between; align-items: center; margin-top: 14px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px;">
             <button type="submit" class="btn-submit">⚡ Submit Problem (Enter)</button>
-            <span style="font-size:12px; color:var(--dim); font-family:var(--mono);">All practice in C++ only</span>
+            <span style="font-size:11px; color:var(--dim); font-family:var(--mono);">C++ only</span>
           </div>
         </form>
       </div>
@@ -232,7 +315,7 @@
       <div class="card">
         <div class="card-title">
           <span>Today's Submissions</span>
-          <span id="today-count-badge" style="font-family:var(--mono); font-size:13px; color:var(--green);">0 solved</span>
+          <span id="today-count-badge" style="font-family:var(--mono); font-size:12px; color:var(--green);">0 solved</span>
         </div>
         <div class="table-wrapper">
           <table id="problems-table">
@@ -247,7 +330,7 @@
               </tr>
             </thead>
             <tbody id="problems-tbody">
-              <tr><td colspan="6" style="text-align:center; padding:24px; color:var(--dim);">No problems logged yet today. Start with 3 problems!</td></tr>
+              <tr><td colspan="6" style="text-align:center; padding:20px; color:var(--dim);">No problems logged yet today. Minimum 3 problems daily!</td></tr>
             </tbody>
           </table>
         </div>
@@ -259,7 +342,7 @@
       <div class="card">
         <div class="card-title">
           <span>Log a Failure / Missed Pattern</span>
-          <span style="font-size:12px; font-family:var(--mono); color:var(--amber);">Sunday Revision Bank</span>
+          <span style="font-size:11.5px; font-family:var(--mono); color:var(--amber);">Sunday Revision Bank</span>
         </div>
         <form id="failure-form" onsubmit="handleFailureSubmit(event)">
           <div class="input-row">
@@ -269,12 +352,12 @@
             </div>
             <div class="input-group" style="flex:1;">
               <label class="input-label">Pattern</label>
-              <input type="text" id="fail-pattern" class="text-input" placeholder="e.g. Topological Sort / Graph Cycle" required>
+              <input type="text" id="fail-pattern" class="text-input" placeholder="e.g. Topological Sort / Cycle Detection" required>
             </div>
           </div>
-          <div class="input-group" style="margin-bottom:14px;">
-            <label class="input-label">Why did you miss it? (Root cause analysis)</label>
-            <input type="text" id="fail-reason" class="text-input" placeholder="e.g. Did not handle cycle detection / missed prefix condition" required>
+          <div class="input-group" style="margin-bottom:12px;">
+            <label class="input-label">Why did you miss it? (Root cause)</label>
+            <input type="text" id="fail-reason" class="text-input" placeholder="e.g. Missed edge case on multiple prefixes / wrong recursion state" required>
           </div>
           <button type="submit" class="btn-submit" style="background:linear-gradient(135deg, var(--amber), #ff5e62);">❌ Add to Failure Log</button>
         </form>
@@ -293,7 +376,7 @@
       <div class="card">
         <div class="card-title">
           <span>4 Systems Projects Narrative</span>
-          <span style="font-size:12px; font-family:var(--mono); color:var(--blue);">Kernel → Network → Storage → Hot Path</span>
+          <span style="font-size:11.5px; font-family:var(--mono); color:var(--blue);">Kernel → Network → Persistent Storage → Hot Path</span>
         </div>
         <div id="projects-container">
           <!-- Populated by JS -->
@@ -301,47 +384,166 @@
       </div>
     </div>
 
-    <!-- TAB 4: STATS -->
-    <div id="tab-stats" class="tab-content hidden">
+    <!-- TAB 4: 11-MONTH ROADMAP -->
+    <div id="tab-roadmap" class="tab-content hidden">
       <div class="card">
-        <div class="card-title">11-Month Roadmap Progress</div>
-        <div style="margin-bottom:16px;">
-          <div style="display:flex; justify-content:space-between; font-family:var(--mono); font-size:12px; color:var(--muted); margin-bottom:6px;">
-            <span>Phase 1: Foundation (NeetCode 250 + C++ Memory)</span>
-            <span id="phase-pct">Month 1 / 11</span>
-          </div>
-          <div style="height:8px; width:100%; background:var(--surface-alt); border-radius:4px; overflow:hidden;">
-            <div style="height:100%; width:9%; background:linear-gradient(90deg, var(--violet), var(--blue));"></div>
-          </div>
+        <div class="card-title">
+          <span>Month-by-Month Execution Plan</span>
+          <span style="font-size:11.5px; font-family:var(--mono); color:var(--violet);">Aug 2026 → Jul 2027 (~48 Weeks)</span>
+        </div>
+        <p style="font-size:13px; color:var(--muted); margin-bottom:16px;">Click any month to expand full deliverables, benchmarks, and focus areas.</p>
+        <div id="roadmap-months-grid">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 5: BOOKS & RESOURCES -->
+    <div id="tab-resources" class="tab-content hidden">
+      <div class="card">
+        <div class="card-title">Consolidated Systems Resource Chain</div>
+        <p style="font-size:13px; color:var(--muted); margin-bottom:18px;">Selective, high-ROI reading. Anything not on this list is lookup-only or explicitly out of scope.</p>
+
+        <h3 style="font-size:15px; color:var(--violet); margin-bottom:6px;">1. DSA Stack</h3>
+        <div class="chain">
+          <div class="chain-item primary"><div class="chain-label">Curated Pattern</div><div class="chain-name">NeetCode 250</div><div class="chain-detail">Pattern recall, video explanations only when stuck >25m</div></div>
+          <div class="chain-item secondary"><div class="chain-label">Interview Rigor</div><div class="chain-name">Google PYQ Tagged</div><div class="chain-detail">Timed rounds, 30-40% target on hards (Months 5-7)</div></div>
+          <div class="chain-item practice"><div class="chain-label">CP Depth</div><div class="chain-name">Codeforces Div2/3 + CSES</div><div class="chain-detail">Target CF rating 1600+ sustained (Months 8-11)</div></div>
         </div>
 
-        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:14px; margin-top:20px;">
-          <div class="stat-pill" style="padding:14px; flex-direction:column; align-items:flex-start;">
-            <span style="color:var(--dim); font-size:11px;">TOTAL PROBLEMS SOLVED</span>
-            <b id="total-problems-stat" style="font-size:22px; color:var(--violet);">0</b>
-          </div>
-          <div class="stat-pill" style="padding:14px; flex-direction:column; align-items:flex-start;">
-            <span style="color:var(--dim); font-size:11px;">CURRENT STREAK</span>
-            <b id="streak-stat" style="font-size:22px; color:var(--amber);">0 Days</b>
-          </div>
-          <div class="stat-pill" style="padding:14px; flex-direction:column; align-items:flex-start;">
-            <span style="color:var(--dim); font-size:11px;">FAILURES LOGGED</span>
-            <b id="failures-stat" style="font-size:22px; color:#ff9a63;">0</b>
-          </div>
+        <h3 style="font-size:15px; color:var(--blue); margin-bottom:6px;">2. C++ Mastery</h3>
+        <div class="chain">
+          <div class="chain-item primary"><div class="chain-label">Core Modern C++</div><div class="chain-name">Effective Modern C++ (Meyers)</div><div class="chain-detail">~30 core items on move semantics, smart pointers, universal references</div></div>
+          <div class="chain-item secondary"><div class="chain-label">Concurrency</div><div class="chain-name">C++ Concurrency in Action</div><div class="chain-detail">Williams — alongside Project 2/3 concurrency work</div></div>
+          <div class="chain-item practice"><div class="chain-label">Cold Reimplementation</div><div class="chain-name">Reimplement std::vector & unordered_map</div><div class="chain-detail">Forces memory model, allocator & hashing internals</div></div>
+        </div>
+
+        <h3 style="font-size:15px; color:var(--green); margin-bottom:6px;">3. Linux & Systems Programming</h3>
+        <div class="chain">
+          <div class="chain-item primary"><div class="chain-label">Primary Reference</div><div class="chain-name">The Linux Programming Interface (TLPI)</div><div class="chain-detail">Selective — processes, threads, files, signals, sockets only (~15-20 chaps)</div></div>
+          <div class="chain-item secondary"><div class="chain-label">Sockets</div><div class="chain-name">Beej's Guide to Network Programming</div><div class="chain-detail">Sockets, epoll, non-blocking I/O — read in full</div></div>
+          <div class="chain-item practice"><div class="chain-label">Tool Fluency</div><div class="chain-name">gdb · strace · perf · ASan/UBSan</div><div class="chain-detail">Mandatory diagnosis on real memory bugs & hot loops</div></div>
+        </div>
+
+        <h3 style="font-size:15px; color:var(--amber); margin-bottom:6px;">4. Operating Systems</h3>
+        <div class="chain">
+          <div class="chain-item primary"><div class="chain-label">Primary Textbook</div><div class="chain-name">OSTEP (Remzi)</div><div class="chain-detail">Virtualization + Concurrency parts in full (~25 chapters); Persistence skim</div></div>
+          <div class="chain-item secondary"><div class="chain-label">Secondary</div><div class="chain-name">CS:APP</div><div class="chain-detail">Ch. 8 (exceptional control flow), Ch. 9 (virtual memory), Ch. 12 (concurrency)</div></div>
+        </div>
+
+        <h3 style="font-size:15px; color:#ff9a63; margin-bottom:6px;">5. Databases & Storage Engines</h3>
+        <div class="chain">
+          <div class="chain-item primary"><div class="chain-label">Primary Storage</div><div class="chain-name">DDIA Part I (Kleppmann)</div><div class="chain-detail">Ch. 1-3 (B-trees, LSM, encoding), Ch. 7 (ACID, isolation levels, MVCC)</div></div>
+          <div class="chain-item secondary"><div class="chain-label">Practice</div><div class="chain-name">Postgres EXPLAIN ANALYZE</div><div class="chain-detail">Live query planning & index optimization on real DB</div></div>
+        </div>
+
+        <h3 style="font-size:15px; color:var(--violet); margin-bottom:6px;">6. Distributed Systems & Consensus</h3>
+        <div class="chain">
+          <div class="chain-item primary"><div class="chain-label">Primary</div><div class="chain-name">DDIA Part II & III</div><div class="chain-detail">Replication, partitioning, consistency models & consensus</div></div>
+          <div class="chain-item secondary"><div class="chain-label">Consensus Paper</div><div class="chain-name">Raft Consensus Paper</div><div class="chain-detail">Ongaro & Ousterhout — read original paper in full</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 6: CHECKPOINTS & RULES -->
+    <div id="tab-checkpoints" class="tab-content hidden">
+      <div class="card">
+        <div class="card-title">Daily Rituals (Non-Negotiable)</div>
+        <ul style="margin-left:20px; font-size:13px; color:var(--muted); line-height:1.7;">
+          <li><b>3 problems/day minimum</b>, every day, no exceptions. All in <b>C++ only</b>.</li>
+          <li><b>1 Codeforces Div2/3 contest/week</b> from month 3 onward, plus same-day upsolve.</li>
+          <li><b>Sunday = revision day.</b> No new problems. Redo every failure on a blank editor.</li>
+          <li>Keep a <b>failure log</b>. If same pattern fails 3+ times, dedicate a full study day.</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <div class="card-title">4 Objective Checkpoints</div>
+
+        <div class="checkpoint">
+          <div class="checkpoint-head"><span class="m">M3</span><span class="l">Foundation Check</span></div>
+          <ul>
+            <li>Solve 70% of LC medium (arrays/strings/trees/graphs BFS-DFS/binary search/DP-intro) in &lt;25m unaided.</li>
+            <li>Thread pool project committed on GitHub with benchmarks.</li>
+            <li>Explain RAII, move semantics, smart pointers without notes.</li>
+            <li>Diagnose real segfault with gdb/strace/ASan cold.</li>
+          </ul>
+          <div class="verdict"><b>If not met:</b> Behind schedule. Stop adding new topics. Consolidate for 1–2 weeks before proceeding.</div>
+        </div>
+
+        <div class="checkpoint">
+          <div class="checkpoint-head"><span class="m">M6</span><span class="l">Systems Check</span></div>
+          <ul>
+            <li>CF rating ≥1300.</li>
+            <li>Implement Segment Tree + DSU from scratch in &lt;15 min cold.</li>
+            <li>HTTP server handles 5,000+ concurrent connections benchmarked with wrk.</li>
+            <li>Explain B-tree vs LSM-tree tradeoffs and MVCC in interview-form.</li>
+          </ul>
+          <div class="verdict"><b>If not met:</b> Push Project 3 by 2 weeks to close concurrency gaps.</div>
+        </div>
+
+        <div class="checkpoint">
+          <div class="checkpoint-head"><span class="m">M9</span><span class="l">CP + Storage Check</span></div>
+          <ul>
+            <li>CF rating ≥1500, CSES ≥60% solved.</li>
+            <li>KV store project has working WAL crash recovery, benchmarked vs Redis/SQLite.</li>
+            <li>Solve LC hard at 30–40% success rate within 40 minutes.</li>
+          </ul>
+          <div class="verdict"><b>If not met:</b> Cut scope on capstone — focus on correct single-threaded matching engine first.</div>
+        </div>
+
+        <div class="checkpoint">
+          <div class="checkpoint-head"><span class="m">M11</span><span class="l">Job-Ready Bar</span></div>
+          <ul>
+            <li>CF rating 1600+ sustained.</li>
+            <li>All 4 projects complete with measured benchmark numbers and clear READMEs on GitHub.</li>
+            <li>Matching engine has lock-free SPSC pipeline with measured p99 latency number.</li>
+            <li>Pass mock full-loop interviews (Coding + System Design + Behavioral).</li>
+          </ul>
+          <div class="verdict"><b>If not met:</b> Extend timeline rather than burning first attempts at top targets underprepared.</div>
         </div>
       </div>
 
-      <!-- Codeforces Handle Setup -->
       <div class="card">
-        <div class="card-title">Codeforces Handle & Rating Sync</div>
+        <div class="card-title">What NOT to Study (Explicit Exclusions)</div>
+        <div class="skip-grid">
+          <div class="skip-item"><b>Quant Math & Options</b><div class="why">Stochastic calculus/Black-Scholes is for Quant Research, NOT Quant Dev.</div></div>
+          <div class="skip-item"><b>Deep NUMA Tuning</b><div class="why">Niche, rarely tested at internship/new-grad level.</div></div>
+          <div class="skip-item"><b>General Lock-Free Hash Maps / Custom Malloc</b><div class="why">Multi-month rabbit holes; SPSC ring buffer + pool allocator is enough.</div></div>
+          <div class="skip-item"><b>Rust</b><div class="why">Single systems language all the way down — C++ is the standard.</div></div>
+          <div class="skip-item"><b>Full C++20 (Concepts/Coroutines/Ranges)</b><div class="why">Nice-to-have, not tested at target level.</div></div>
+          <div class="skip-item"><b>Batch / Stream Internals (Spark/Kafka)</b><div class="why">Low ROI vs time cost for systems/quant tracks.</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 7: STATS -->
+    <div id="tab-stats" class="tab-content hidden">
+      <div class="card">
+        <div class="card-title">Roadmap Overview & Stats</div>
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:12px; margin-bottom:20px;">
+          <div class="stat-pill" style="padding:14px; flex-direction:column; align-items:flex-start;">
+            <span style="color:var(--dim); font-size:10px; text-transform:uppercase;">Total Problems</span>
+            <b id="total-problems-stat" style="font-size:22px; color:var(--violet);">0</b>
+          </div>
+          <div class="stat-pill" style="padding:14px; flex-direction:column; align-items:flex-start;">
+            <span style="color:var(--dim); font-size:10px; text-transform:uppercase;">Current Streak</span>
+            <b id="streak-stat" style="font-size:22px; color:var(--amber);">0 Days</b>
+          </div>
+          <div class="stat-pill" style="padding:14px; flex-direction:column; align-items:flex-start;">
+            <span style="color:var(--dim); font-size:10px; text-transform:uppercase;">Failures Logged</span>
+            <b id="failures-stat" style="font-size:22px; color:#ff9a63;">0</b>
+          </div>
+        </div>
+
         <div class="input-row" style="align-items:flex-end;">
           <div class="input-group">
             <label class="input-label">Codeforces Username</label>
             <input type="text" id="cf-handle-input" class="text-input" placeholder="e.g. ujjwal_prakash">
           </div>
-          <button class="auth-btn" style="padding:10px 18px;" onclick="saveCFHandle()">Fetch & Save Rating</button>
+          <button class="auth-btn" style="padding:9px 16px;" onclick="saveCFHandle()">Sync CF Rating</button>
         </div>
-        <div id="cf-details" style="margin-top:14px; font-family:var(--mono); font-size:13px; color:var(--muted);"></div>
+        <div id="cf-details" style="margin-top:10px; font-family:var(--mono); font-size:12px; color:var(--muted);"></div>
       </div>
     </div>
 
@@ -350,24 +552,24 @@
   <!-- AUTH MODAL -->
   <div id="auth-modal" class="modal-overlay">
     <div class="modal">
-      <div class="card-title" style="margin-bottom:12px;">Account Access</div>
-      <p style="font-size:13px; color:var(--muted); margin-bottom:18px;">Sign in to sync your roadmap data with Supabase & email reports.</p>
+      <div class="card-title" style="margin-bottom:10px;">Account Access</div>
+      <p style="font-size:12.5px; color:var(--muted); margin-bottom:16px;">Sign in or sign up to sync your roadmap data with Supabase & email reports.</p>
       
-      <div class="input-group" style="margin-bottom:12px;">
+      <div class="input-group" style="margin-bottom:10px;">
         <label class="input-label">Email</label>
         <input type="email" id="auth-email" class="text-input" value="eugenewoolf220205@gmail.com" required>
       </div>
-      <div class="input-group" style="margin-bottom:18px;">
+      <div class="input-group" style="margin-bottom:16px;">
         <label class="input-label">Password</label>
         <input type="password" id="auth-password" class="text-input" placeholder="••••••••" required>
       </div>
 
-      <div style="display:flex; gap:10px;">
+      <div style="display:flex; gap:8px;">
         <button class="auth-btn" style="flex:1;" onclick="handleSignIn()">Sign In</button>
         <button class="auth-btn secondary" style="flex:1;" onclick="handleSignUp()">Sign Up</button>
       </div>
-      <div style="text-align:center; margin-top:14px;">
-        <button style="background:none; border:none; color:var(--dim); font-size:12px; cursor:pointer;" onclick="closeAuthModal()">Close</button>
+      <div style="text-align:center; margin-top:12px;">
+        <button style="background:none; border:none; color:var(--dim); font-size:11.5px; cursor:pointer;" onclick="closeAuthModal()">Close</button>
       </div>
     </div>
   </div>
@@ -376,16 +578,16 @@
   <div id="config-modal" class="modal-overlay">
     <div class="modal">
       <div class="card-title">Supabase Credentials</div>
-      <p style="font-size:13px; color:var(--muted); margin-bottom:18px;">Enter your Project URL and Anon Public Key from Supabase Project Settings -> API.</p>
-      <div class="input-group" style="margin-bottom:12px;">
+      <p style="font-size:12.5px; color:var(--muted); margin-bottom:16px;">Enter your Project URL & Anon Key from Supabase Project Settings → API.</p>
+      <div class="input-group" style="margin-bottom:10px;">
         <label class="input-label">SUPABASE_URL</label>
-        <input type="text" id="cfg-url" class="text-input" placeholder="https://xyzcompany.supabase.co">
+        <input type="text" id="cfg-url" class="text-input" placeholder="https://xyeivscujrvtnfnjxakc.supabase.co">
       </div>
-      <div class="input-group" style="margin-bottom:18px;">
+      <div class="input-group" style="margin-bottom:16px;">
         <label class="input-label">SUPABASE_ANON_KEY</label>
         <input type="text" id="cfg-key" class="text-input" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...">
       </div>
-      <div style="display:flex; gap:10px;">
+      <div style="display:flex; gap:8px;">
         <button class="auth-btn" style="flex:1;" onclick="saveConfig()">Save & Connect</button>
         <button class="auth-btn secondary" onclick="closeConfigModal()">Cancel</button>
       </div>
@@ -394,94 +596,206 @@
 
   <script>
     // --- Application State ---
-    let supabase = null;
+    let sbClient = null;
     let currentUser = null;
     let localData = {
-      problems: [],
-      failures: [],
+      problems: JSON.parse(localStorage.getItem('WOOLF_PROBLEMS') || '[]'),
+      failures: JSON.parse(localStorage.getItem('WOOLF_FAILURES') || '[]'),
       projects: [],
-      profile: { streak_current: 0, cf_handle: '', last_log_date: null }
+      profile: JSON.parse(localStorage.getItem('WOOLF_PROFILE') || '{"streak_current":0,"cf_handle":"","last_log_date":null}')
     };
+
+    const monthData = [
+      {n:1, title:"Foundation — Arrays, Memory Model, Syscalls", focus:"DSA foundation begins, C++ memory model, Linux fundamentals",
+       k:"C++ memory model (stack/heap/pointers/refs), intro to Linux syscalls",
+       dsa:"Arrays, strings, hashing — NeetCode 250 start",
+       sys:"OSTEP virtualization intro chapters",
+       proj:"Environment setup — CMake, sanitizers (ASan/UBSan), gdb configured",
+       cpp:"RAII, references vs pointers, basic templates (Meyers EMC++)",
+       linux:"Shell fluency, man pages, basic strace",
+       deliver:"40 DSA problems logged; dev environment fully configured",
+       bench:"Explain stack vs heap and RAII without notes"},
+      {n:2, title:"Two Pointers, Sliding Window, Thread Pool Build", focus:"Core patterns continue, Project 1 starts",
+       k:"Move semantics, copy/move constructors, Rule of 5",
+       dsa:"Two pointers, sliding window, binary search (~40 probs)",
+       sys:"OSTEP concurrency intro (threads, locks)",
+       proj:"Project 1: Thread Pool — build + benchmark",
+       cpp:"Smart pointers (unique/shared/weak), move semantics deep dive",
+       linux:"pthreads, mutex/condvar hands-on",
+       deliver:"Thread pool complete, benchmarked on GitHub",
+       bench:"Write correct producer-consumer with condvars unaided"},
+      {n:3, title:"Recursion, Sorting, DSA Phase 1 Close-Out", focus:"Consolidation + weekly CF contests begin",
+       k:"Templates, STL container internals (vector/map/unordered_map complexity)",
+       dsa:"Recursion, sorting, wrap Phase 1 + CHECKPOINT M3",
+       sys:"gdb + strace + ASan dedicated practice sessions",
+       proj:"Reimplement vector + unordered_map from scratch",
+       cpp:"STL internals, iterator invalidation rules",
+       linux:"First real gdb-diagnosed segfault, first ASan-caught bug",
+       deliver:"M3 Checkpoint criteria met",
+       bench:"Checkpoint M3 — pass/fail evaluation"},
+      {n:4, title:"Trees, Graphs, epoll Server Begins", focus:"Phase 2 DSA opens, Project 2 build starts",
+       k:"Virtual dispatch, vtables, inheritance costs",
+       dsa:"Trees, BFS/DFS, topological sort (~45 probs)",
+       sys:"Beej's Guide full read; TCP/IP + sockets",
+       proj:"Project 2: HTTP server — single connection then epoll loop",
+       cpp:"Virtual dispatch internals, exception costs in hot path",
+       linux:"Socket programming, epoll basics",
+       deliver:"Project 2 accepts multiple concurrent connections",
+       bench:"Explain epoll vs select/poll and why it scales"},
+      {n:5, title:"Heaps, Union-Find, DP Intro, Server Hardening", focus:"Continue Project 2, DP foundations",
+       k:"Atomics + memory ordering intro (relaxed/acquire-release)",
+       dsa:"Heaps, DSU, DP 1D/2D intro (~45 probs)",
+       sys:"OSTEP concurrency deep (deadlocks, semaphores)",
+       proj:"Project 2: HTTP/1.1 parsing, keep-alive, load test with wrk",
+       cpp:"Atomics basics, cache lines conceptual",
+       linux:"perf profiling on the server hot loop",
+       deliver:"Project 2 benchmarked at 5k+ concurrent connections",
+       bench:"Read a perf report and identify hot function"},
+      {n:6, title:"Greedy, Backtracking, DDIA Begins", focus:"DSA Phase 2 close, DB internals reading starts",
+       k:"C++ Concurrency in Action begins; DDIA Part I begins",
+       dsa:"Greedy, backtracking, DP Phase 2 wrap + CHECKPOINT M6",
+       sys:"DDIA Ch. 1-2 (data models, storage engines)",
+       proj:"Project 2 finalize + benchmarks; Project 3 design doc",
+       cpp:"Concurrency in Action — thread-safe data structures",
+       linux:"CMake for multi-target builds",
+       deliver:"M6 Checkpoint criteria met",
+       bench:"Checkpoint M6 — pass/fail evaluation"},
+      {n:7, title:"Advanced DP, MST, KV Store Build Starts", focus:"Phase 3 DSA opens, Project 3 build begins",
+       k:"DDIA Ch. 3 (encoding) + Ch. 7 (transactions/MVCC)",
+       dsa:"Advanced DP (bitmask, tree DP), Dijkstra, MST (~55 probs)",
+       sys:"WAL and crash-recovery design study",
+       proj:"Project 3: KV store — memtable + WAL write path",
+       cpp:"Binary serialization patterns",
+       linux:"mmap hands-on for file reads",
+       deliver:"Project 3 WAL write path functional",
+       bench:"Explain WAL + MVCC without notes"},
+      {n:8, title:"Segment Trees, Fenwick, SSTable Flush + Compaction", focus:"Advanced DS, storage engine deepens",
+       k:"B-tree vs LSM tradeoffs in depth",
+       dsa:"Segment trees, Fenwick trees, string algos (KMP/Z) (~55 probs)",
+       sys:"Postgres EXPLAIN ANALYZE practice on live DB",
+       proj:"Project 3: SSTable flush, basic compaction, crash recovery",
+       cpp:"Consolidation month",
+       linux:"Disk I/O profiling",
+       deliver:"Project 3 survives simulated crash mid-write test",
+       bench:"Kill process mid-write, verify correct WAL replay"},
+      {n:9, title:"CSES Push, DDIA Distributed, Matching Engine Design", focus:"CP intensifies, capstone design begins",
+       k:"DDIA Part II (replication/partitioning/consensus), Raft paper",
+       dsa:"CSES problem set push + tries, bit manipulation — target CF 1500",
+       sys:"Raft paper read in full",
+       proj:"Project 3 finalize; Project 4 design — order book architecture",
+       cpp:"Intrusive data structure design study",
+       linux:"Tool fluency review",
+       deliver:"M9 Checkpoint criteria met",
+       bench:"Checkpoint M9 — pass/fail evaluation"},
+      {n:10, title:"Number Theory, Matching Logic, System Design Begins", focus:"CP polish, capstone matching logic",
+       k:"System Design Interview Vol. 1 (Alex Xu) begins",
+       dsa:"Number theory, game theory, timed hard problem drills",
+       sys:"5-8 system design writeups",
+       proj:"Project 4: matching logic complete, begin lock-free ring buffer",
+       cpp:"Memory ordering deep dive for ring buffer",
+       linux:"ThreadSanitizer on ring buffer",
+       deliver:"Matching engine functionally correct",
+       bench:"Explain price-time priority matching without notes"},
+      {n:11, title:"Lock-Free Finish, Mocks, Resume Lock-In", focus:"Capstone finish, full mock interviews, M11 check",
+       k:"Company-tagged interview sets (Big Tech + quant-style)",
+       dsa:"Timed mixed drills, weak pattern revisits",
+       sys:"10-12 more system design writeups (15-20 total)",
+       proj:"Project 4: lock-free SPSC complete, full latency benchmarks",
+       cpp:"Interview review only",
+       linux:"Interview review only",
+       deliver:"All 4 projects complete on GitHub; resume finalized",
+       bench:"Checkpoint M11 — Job Ready Bar"}
+    ];
 
     // --- Init ---
     document.addEventListener('DOMContentLoaded', () => {
+      renderRoadmap();
       initSupabase();
       setupKeyboardShortcuts();
       renderAll();
     });
 
     function initSupabase() {
-      const url = localStorage.getItem('WOOLF_SB_URL') || window.SUPABASE_URL;
-      const key = localStorage.getItem('WOOLF_SB_KEY') || window.SUPABASE_ANON_KEY;
+      const url = localStorage.getItem('WOOLF_SB_URL') || 'https://xyeivscujrvtnfnjxakc.supabase.co';
+      const key = localStorage.getItem('WOOLF_SB_KEY');
 
-      if (url && key) {
+      if (url && key && window.supabase) {
         try {
-          supabase = window.supabase.createClient(url, key);
+          sbClient = window.supabase.createClient(url, key);
           document.getElementById('config-banner').classList.add('hidden');
           checkAuthSession();
         } catch (e) {
-          console.error("Supabase client init failed", e);
+          console.warn("Supabase init notice:", e);
         }
       } else {
-        document.getElementById('config-banner').classList.remove('hidden');
+        if (!key) document.getElementById('config-banner').classList.remove('hidden');
         loadLocalFallback();
       }
     }
 
     async function checkAuthSession() {
-      if (!supabase) return;
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        currentUser = session.user;
-        updateAuthUI(true);
-        fetchCloudData();
-      } else {
-        updateAuthUI(false);
+      if (!sbClient) return;
+      try {
+        const { data: { session } } = await sbClient.auth.getSession();
+        if (session) {
+          currentUser = session.user;
+          updateAuthUI(true);
+          fetchCloudData();
+        } else {
+          updateAuthUI(false);
+        }
+      } catch (e) {
+        console.warn("Session check fallback:", e);
       }
     }
 
     // --- Cloud Data Sync ---
     async function fetchCloudData() {
-      if (!supabase || !currentUser) return;
+      if (!sbClient || !currentUser) return;
 
-      const todayStr = new Date().toISOString().slice(0, 10);
-
-      // 1. Profile
-      const { data: profile } = await supabase.from('profiles').select('*').eq('id', currentUser.id).single();
-      if (profile) {
-        localData.profile = profile;
-        document.getElementById('stat-streak').innerText = profile.streak_current || 0;
-        document.getElementById('streak-stat').innerText = `${profile.streak_current || 0} Days`;
-        if (profile.cf_handle) {
-          document.getElementById('cf-handle-input').value = profile.cf_handle;
-          fetchCFRating(profile.cf_handle);
+      try {
+        const { data: profile } = await sbClient.from('profiles').select('*').eq('id', currentUser.id).single();
+        if (profile) {
+          localData.profile = profile;
+          document.getElementById('stat-streak').innerText = profile.streak_current || 0;
+          document.getElementById('streak-stat').innerText = `${profile.streak_current || 0} Days`;
+          if (profile.cf_handle) {
+            document.getElementById('cf-handle-input').value = profile.cf_handle;
+            fetchCFRating(profile.cf_handle);
+          }
         }
-      }
 
-      // 2. Today's Problems
-      const { data: problems } = await supabase.from('problems').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false });
-      if (problems) {
-        localData.problems = problems;
-        renderProblemsTable();
-      }
+        const { data: problems } = await sbClient.from('problems').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false });
+        if (problems) {
+          localData.problems = problems;
+          saveLocal();
+          renderProblemsTable();
+        }
 
-      // 3. Failures
-      const { data: failures } = await supabase.from('failures').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false });
-      if (failures) {
-        localData.failures = failures;
-        renderFailures();
-      }
+        const { data: failures } = await sbClient.from('failures').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false });
+        if (failures) {
+          localData.failures = failures;
+          saveLocal();
+          renderFailures();
+        }
 
-      // 4. Projects
-      const { data: projects } = await supabase.from('projects').select('*').eq('user_id', currentUser.id).order('project_num', { ascending: true });
-      if (projects && projects.length > 0) {
-        localData.projects = projects;
-        renderProjects();
-      } else {
-        seedDefaultProjects();
+        const { data: projects } = await sbClient.from('projects').select('*').eq('user_id', currentUser.id).order('project_num', { ascending: true });
+        if (projects && projects.length > 0) {
+          localData.projects = projects;
+          renderProjects();
+        } else {
+          seedDefaultProjects();
+        }
+      } catch (e) {
+        console.warn("Cloud sync fallback to local:", e);
       }
-
       updateStatsCounters();
+    }
+
+    function saveLocal() {
+      localStorage.setItem('WOOLF_PROBLEMS', JSON.stringify(localData.problems));
+      localStorage.setItem('WOOLF_FAILURES', JSON.stringify(localData.failures));
+      localStorage.setItem('WOOLF_PROFILE', JSON.stringify(localData.profile));
     }
 
     // --- Tab Switching ---
@@ -520,9 +834,9 @@
 
       const name = nameInput.value.trim();
       const time = parseInt(timeInput.value) || 0;
-      const source = getActivePill('source-pills');
-      const difficulty = getActivePill('diff-pills');
-      const pattern = getActivePill('pattern-pills');
+      const source = getActivePill('source-pills') || 'neetcode';
+      const difficulty = getActivePill('diff-pills') || 'Medium';
+      const pattern = getActivePill('pattern-pills') || 'Arrays & Hashing';
       const todayStr = new Date().toISOString().slice(0, 10);
 
       if (!name) return;
@@ -538,24 +852,28 @@
         created_at: new Date().toISOString()
       };
 
-      // Optimistic update
       localData.problems.unshift(newProb);
+      saveLocal();
       renderProblemsTable();
       updateStreak();
       nameInput.value = '';
+      timeInput.value = '';
       nameInput.focus();
 
-      // Cloud sync
-      if (supabase && currentUser) {
-        await supabase.from('problems').insert([{
-          user_id: currentUser.id,
-          name,
-          source,
-          difficulty,
-          pattern,
-          time_spent_min: time,
-          logged_at: todayStr
-        }]);
+      if (sbClient && currentUser) {
+        try {
+          await sbClient.from('problems').insert([{
+            user_id: currentUser.id,
+            name,
+            source,
+            difficulty,
+            pattern,
+            time_spent_min: time,
+            logged_at: todayStr
+          }]);
+        } catch (err) {
+          console.warn("Could not insert problem to Supabase:", err);
+        }
       }
     }
 
@@ -575,19 +893,39 @@
       };
 
       localData.failures.unshift(failObj);
+      saveLocal();
       renderFailures();
       nameEl.value = '';
       patternEl.value = '';
       reasonEl.value = '';
 
-      if (supabase && currentUser) {
-        await supabase.from('failures').insert([{
-          user_id: currentUser.id,
-          problem_name: failObj.problem_name,
-          pattern: failObj.pattern,
-          reason: failObj.reason,
-          reviewed: false
-        }]);
+      if (sbClient && currentUser) {
+        try {
+          await sbClient.from('failures').insert([{
+            user_id: currentUser.id,
+            problem_name: failObj.problem_name,
+            pattern: failObj.pattern,
+            reason: failObj.reason,
+            reviewed: false
+          }]);
+        } catch (err) {
+          console.warn("Could not insert failure to Supabase:", err);
+        }
+      }
+    }
+
+    async function deleteProblem(id) {
+      localData.problems = localData.problems.filter(p => p.id !== id);
+      saveLocal();
+      renderProblemsTable();
+      updateStatsCounters();
+
+      if (sbClient && currentUser) {
+        try {
+          await sbClient.from('problems').delete().eq('id', id).eq('user_id', currentUser.id);
+        } catch (err) {
+          console.warn("Could not delete from Supabase:", err);
+        }
       }
     }
 
@@ -597,13 +935,17 @@
         proj.stages[stageIndex].done = isDone;
         renderProjects();
 
-        if (supabase && currentUser) {
-          await supabase.from('projects').update({ stages: proj.stages }).eq('user_id', currentUser.id).eq('project_num', projectNum);
+        if (sbClient && currentUser) {
+          try {
+            await sbClient.from('projects').update({ stages: proj.stages }).eq('user_id', currentUser.id).eq('project_num', projectNum);
+          } catch (err) {
+            console.warn("Could not update project stage in Supabase:", err);
+          }
         }
       }
     }
 
-    // --- Streak & Stats Updates ---
+    // --- Streak & Counters ---
     function updateStreak() {
       const todayStr = new Date().toISOString().slice(0, 10);
       const todayProbs = localData.problems.filter(p => p.logged_at === todayStr);
@@ -611,7 +953,7 @@
       document.getElementById('stat-today').innerText = `${todayProbs.length}/3`;
       document.getElementById('today-count-badge').innerText = `${todayProbs.length} solved today`;
 
-      if (todayProbs.length === 1 && localData.profile.last_log_date !== todayStr) {
+      if (todayProbs.length >= 1 && localData.profile.last_log_date !== todayStr) {
         const lastDate = localData.profile.last_log_date ? new Date(localData.profile.last_log_date) : null;
         const today = new Date(todayStr);
         const diffDays = lastDate ? Math.round((today - lastDate) / (1000 * 3600 * 24)) : null;
@@ -622,10 +964,11 @@
           localData.profile.streak_current = 1;
         }
         localData.profile.last_log_date = todayStr;
+        saveLocal();
         document.getElementById('stat-streak').innerText = localData.profile.streak_current;
 
-        if (supabase && currentUser) {
-          supabase.from('profiles').update({
+        if (sbClient && currentUser) {
+          sbClient.from('profiles').update({
             streak_current: localData.profile.streak_current,
             last_log_date: todayStr
           }).eq('id', currentUser.id);
@@ -638,6 +981,7 @@
       document.getElementById('total-problems-stat').innerText = localData.problems.length;
       document.getElementById('failures-stat').innerText = localData.failures.length;
       document.getElementById('streak-stat').innerText = `${localData.profile.streak_current || 0} Days`;
+      document.getElementById('stat-streak').innerText = localData.profile.streak_current || 0;
     }
 
     // --- Rendering ---
@@ -647,17 +991,17 @@
       const tbody = document.getElementById('problems-tbody');
 
       if (todayProblems.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:24px; color:var(--dim);">No problems logged yet today. 3 problems/day minimum!</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:20px; color:var(--dim);">No problems logged yet today. 3 problems daily minimum!</td></tr>`;
         return;
       }
 
       tbody.innerHTML = todayProblems.map(p => `
         <tr>
           <td style="font-weight:600; color:var(--text);">${p.name}</td>
-          <td style="font-family:var(--mono); color:var(--violet); font-size:12px;">${p.pattern}</td>
+          <td style="font-family:var(--mono); color:var(--violet); font-size:11.5px;">${p.pattern}</td>
           <td><span class="badge-diff ${p.difficulty}">${p.difficulty}</span></td>
           <td style="font-family:var(--mono); font-size:11px; text-transform:uppercase; color:var(--dim);">${p.source}</td>
-          <td style="font-family:var(--mono); font-size:12px;">${p.time_spent_min ? p.time_spent_min + 'm' : '--'}</td>
+          <td style="font-family:var(--mono); font-size:11.5px;">${p.time_spent_min ? p.time_spent_min + 'm' : '--'}</td>
           <td><button class="del-btn" onclick="deleteProblem('${p.id}')">✕</button></td>
         </tr>
       `).join('');
@@ -672,13 +1016,13 @@
       }
 
       container.innerHTML = localData.failures.map(f => `
-        <div style="background:var(--surface-alt); border:1px solid var(--border); border-left:3px solid var(--amber); border-radius:8px; padding:14px; margin-bottom:10px;">
+        <div style="background:var(--surface-alt); border:1px solid var(--border); border-left:3px solid var(--amber); border-radius:8px; padding:12px; margin-bottom:8px;">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-            <span style="font-weight:600; color:var(--text); font-size:14px;">${f.problem_name}</span>
+            <span style="font-weight:600; color:var(--text); font-size:13.5px;">${f.problem_name}</span>
             <span style="font-family:var(--mono); font-size:11px; color:var(--violet);">${f.pattern}</span>
           </div>
-          <p style="font-size:13px; color:var(--muted); margin-bottom:6px;"><b>Why missed:</b> ${f.reason}</p>
-          <div style="font-size:11px; font-family:var(--mono); color:var(--dim);">${f.logged_at}</div>
+          <p style="font-size:12.5px; color:var(--muted); margin-bottom:4px;"><b>Why missed:</b> ${f.reason}</p>
+          <div style="font-size:10.5px; font-family:var(--mono); color:var(--dim);">${f.logged_at}</div>
         </div>
       `).join('');
     }
@@ -694,11 +1038,11 @@
 
         return `
           <div class="project-card">
-            <div class="project-header" style="margin-bottom:12px;">
+            <div class="project-header" style="margin-bottom:10px;">
               <div class="project-name">${proj.name}</div>
-              <div style="font-family:var(--mono); font-size:12px; color:var(--violet);">${completed}/${stages.length} Stages (${pct}%)</div>
+              <div style="font-family:var(--mono); font-size:11.5px; color:var(--violet);">${completed}/${stages.length} Stages (${pct}%)</div>
             </div>
-            <div style="height:6px; width:100%; background:var(--surface); border-radius:3px; overflow:hidden; margin-bottom:14px;">
+            <div style="height:6px; width:100%; background:var(--surface); border-radius:3px; overflow:hidden; margin-bottom:12px;">
               <div style="height:100%; width:${pct}%; background:linear-gradient(90deg, var(--violet), var(--blue));"></div>
             </div>
             <div class="stages-list">
@@ -714,14 +1058,45 @@
       }).join('');
     }
 
+    function renderRoadmap() {
+      const container = document.getElementById('roadmap-months-grid');
+      container.innerHTML = monthData.map((m, idx) => `
+        <div class="month-card ${idx === 0 ? 'open' : ''}">
+          <div class="month-head" onclick="this.parentElement.classList.toggle('open')">
+            <div class="month-num">${String(m.n).padStart(2,'0')}</div>
+            <div class="month-title">
+              <b>${m.title}</b>
+              <span>${m.focus}</span>
+            </div>
+            <div class="month-chevron">▸</div>
+          </div>
+          <div class="month-body">
+            <div class="mg-grid">
+              <div class="mg-cell"><div class="k">Knowledge</div><div class="v">${m.k}</div></div>
+              <div class="mg-cell"><div class="k">DSA</div><div class="v">${m.dsa}</div></div>
+              <div class="mg-cell"><div class="k">Systems</div><div class="v">${m.sys}</div></div>
+              <div class="mg-cell"><div class="k">Project</div><div class="v">${m.proj}</div></div>
+              <div class="mg-cell"><div class="k">C++</div><div class="v">${m.cpp}</div></div>
+              <div class="mg-cell"><div class="k">Linux</div><div class="v">${m.linux}</div></div>
+              <div class="mg-cell deliverable"><div class="k">Deliverable</div><div class="v">${m.deliver}</div></div>
+              <div class="mg-cell benchmark"><div class="k">Benchmark</div><div class="v">${m.bench}</div></div>
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
     function renderAll() {
       renderProblemsTable();
       renderFailures();
-      renderProjects();
+      if (!localData.projects || localData.projects.length === 0) {
+        seedDefaultProjects();
+      } else {
+        renderProjects();
+      }
       updateStatsCounters();
     }
 
-    // --- Fallback Seeding ---
     function seedDefaultProjects() {
       localData.projects = [
         {
@@ -796,9 +1171,14 @@
       const handle = document.getElementById('cf-handle-input').value.trim();
       if (!handle) return;
       localData.profile.cf_handle = handle;
+      saveLocal();
       fetchCFRating(handle);
-      if (supabase && currentUser) {
-        await supabase.from('profiles').update({ cf_handle: handle }).eq('id', currentUser.id);
+      if (sbClient && currentUser) {
+        try {
+          await sbClient.from('profiles').update({ cf_handle: handle }).eq('id', currentUser.id);
+        } catch (e) {
+          console.warn("Error updating CF handle:", e);
+        }
       }
     }
 
@@ -830,10 +1210,10 @@
     function closeConfigModal() { document.getElementById('config-modal').classList.remove('active'); }
 
     async function handleSignIn() {
-      if (!supabase) return alert("Please configure Supabase keys first.");
+      if (!sbClient) return alert("Please configure Supabase keys first via 'Setup Keys'.");
       const email = document.getElementById('auth-email').value.trim();
       const password = document.getElementById('auth-password').value.trim();
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      const { data, error } = await sbClient.auth.signInWithPassword({ email, password });
       if (error) alert(error.message);
       else {
         currentUser = data.user;
@@ -844,13 +1224,13 @@
     }
 
     async function handleSignUp() {
-      if (!supabase) return alert("Please configure Supabase keys first.");
+      if (!sbClient) return alert("Please configure Supabase keys first via 'Setup Keys'.");
       const email = document.getElementById('auth-email').value.trim();
       const password = document.getElementById('auth-password').value.trim();
-      const { data, error } = await supabase.auth.signUp({ email, password });
+      const { data, error } = await sbClient.auth.signUp({ email, password });
       if (error) alert(error.message);
       else {
-        alert("Account registered! Logging in...");
+        alert("Account registered successfully! Logging in...");
         currentUser = data.user;
         closeAuthModal();
         updateAuthUI(true);
@@ -859,7 +1239,7 @@
     }
 
     async function handleSignOut() {
-      if (supabase) await supabase.auth.signOut();
+      if (sbClient) await sbClient.auth.signOut();
       currentUser = null;
       updateAuthUI(false);
     }
