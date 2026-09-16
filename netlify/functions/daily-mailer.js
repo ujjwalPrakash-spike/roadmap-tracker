@@ -22,15 +22,11 @@ exports.handler = async function (event, context) {
 
   try {
     // 1. Fetch user profile
-    const { data: profiles, error: profileErr } = await supabase
+    const { data: profiles } = await supabase
       .from('profiles')
       .select('*')
       .eq('email', recipientEmail)
       .limit(1);
-
-    if (profileErr || !profiles || profiles.length === 0) {
-      console.log(`No profile found for ${recipientEmail}, fetching latest profile`);
-    }
 
     const profile = (profiles && profiles[0]) || { streak_current: 0, streak_longest: 0 };
     const userId = profile.id;
@@ -49,7 +45,7 @@ exports.handler = async function (event, context) {
     if (userId) {
       problemsQuery = problemsQuery.eq('user_id', userId);
     }
-    const { data: todayProblems, error: probErr } = await problemsQuery;
+    const { data: todayProblems } = await problemsQuery;
 
     // 3. Fetch failures logged today
     let failuresQuery = supabase
@@ -61,7 +57,7 @@ exports.handler = async function (event, context) {
     if (userId) {
       failuresQuery = failuresQuery.eq('user_id', userId);
     }
-    const { data: todayFailures, error: failErr } = await failuresQuery;
+    const { data: todayFailures } = await failuresQuery;
 
     const count = (todayProblems || []).length;
     const streak = profile.streak_current || 0;
@@ -70,80 +66,81 @@ exports.handler = async function (event, context) {
     // 4. Construct Email HTML
     const problemRows = (todayProblems && todayProblems.length > 0)
       ? todayProblems.map(p => `
-        <tr style="border-bottom: 1px solid #2d2b38;">
-          <td style="padding: 10px 12px; color: #ffffff; font-weight: 600;">${p.name}</td>
-          <td style="padding: 10px 12px; color: #a996ff; font-family: monospace;">${p.pattern}</td>
+        <tr style="border-bottom: 1px solid #22202c;">
+          <td style="padding: 10px 12px; color: #f0edf9; font-weight: 500;">${p.name}</td>
+          <td style="padding: 10px 12px; color: #a996ff; font-family: 'JetBrains Mono', monospace; font-size: 11.5px;">${p.pattern}</td>
           <td style="padding: 10px 12px;">
-            <span style="display:inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; background: ${
-              p.difficulty === 'Easy' ? 'rgba(127,217,171,0.2); color:#7fd9ab;' :
-              p.difficulty === 'Hard' ? 'rgba(255,154,99,0.2); color:#ff9a63;' :
-              'rgba(111,168,255,0.2); color:#6fa8ff;'
+            <span style="display: inline-block; padding: 2px 7px; border-radius: 4px; font-size: 10.5px; font-family: 'JetBrains Mono', monospace; font-weight: 600; text-transform: uppercase; ${
+              p.difficulty === 'Easy' ? 'background: rgba(127,217,171,0.12); color:#7fd9ab; border: 1px solid rgba(127,217,171,0.25);' :
+              p.difficulty === 'Hard' ? 'background: rgba(255,154,99,0.12); color:#ff9a63; border: 1px solid rgba(255,154,99,0.25);' :
+              'background: rgba(111,168,255,0.12); color:#6fa8ff; border: 1px solid rgba(111,168,255,0.25);'
             }">${p.difficulty}</span>
           </td>
-          <td style="padding: 10px 12px; color: #8e88a8; font-size: 12px; text-transform: uppercase;">${p.source}</td>
+          <td style="padding: 10px 12px; color: #706a88; font-family: 'JetBrains Mono', monospace; font-size: 11px; text-transform: uppercase;">${p.source}</td>
         </tr>
       `).join('')
-      : `<tr><td colspan="4" style="padding: 18px; text-align: center; color: #8e88a8; font-style: italic;">No problems logged yet for today.</td></tr>`;
+      : `<tr><td colspan="4" style="padding: 24px 12px; text-align: center; color: #706a88; font-size: 12px; font-family: 'JetBrains Mono', monospace;">NO SUBMISSIONS RECORDED TODAY</td></tr>`;
 
     const failureRows = (todayFailures && todayFailures.length > 0)
       ? todayFailures.map(f => `
-        <div style="background: rgba(255, 154, 99, 0.08); border-left: 3px solid #ff9a63; padding: 12px 14px; margin-bottom: 10px; border-radius: 4px;">
-          <div style="font-weight: 600; color: #ff9a63; margin-bottom: 4px;">${f.problem_name} <span style="font-size: 11px; color: #8e88a8; font-weight: normal;">(${f.pattern})</span></div>
-          <div style="font-size: 13px; color: #d0cce3;"><b>Why missed:</b> ${f.reason}</div>
+        <div style="background: #14121d; border-left: 2px solid #ff9a63; padding: 12px 14px; margin-bottom: 8px; border-radius: 0 6px 6px 0;">
+          <div style="font-size: 12.5px; font-weight: 600; color: #f0edf9; margin-bottom: 3px;">
+            ${f.problem_name} <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #a996ff; font-weight: normal;">[${f.pattern}]</span>
+          </div>
+          <div style="font-size: 12px; color: #a6a0bd;">Root cause: ${f.reason}</div>
         </div>
       `).join('')
-      : `<p style="color: #7fd9ab; font-size: 13px; margin: 0;">✨ Clean day! No critical failures logged today.</p>`;
+      : `<div style="padding: 12px; background: #14121d; border-radius: 6px; font-size: 12px; color: #706a88; font-family: 'JetBrains Mono', monospace;">NO FAILURE ENTRIES RECORDED</div>`;
 
     const emailHtml = `
       <!DOCTYPE html>
       <html>
       <head>
         <meta charset="utf-8">
-        <style>
-          body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #0b0a12; color: #eae7f4; margin: 0; padding: 24px; }
-          .container { max-width: 600px; margin: 0 auto; background: #13111c; border-radius: 12px; border: 1px solid rgba(169, 150, 255, 0.15); overflow: hidden; }
-          .header { background: linear-gradient(135deg, #1b172b, #12101b); padding: 28px 24px; border-bottom: 1px solid rgba(169, 150, 255, 0.15); }
-          .badge { display: inline-block; padding: 4px 10px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; border-radius: 20px; background: rgba(169, 150, 255, 0.15); color: #a996ff; margin-bottom: 10px; }
-          .title { font-size: 22px; font-weight: 700; color: #ffffff; margin: 0 0 6px 0; }
-          .subtitle { font-size: 13px; color: #8e88a8; margin: 0; }
-          .content { padding: 24px; }
-          .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 24px; }
-          .stat-card { background: #1a1726; padding: 14px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.06); }
-          .stat-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: #8e88a8; margin-bottom: 4px; }
-          .stat-val { font-size: 24px; font-weight: 700; color: #ffffff; }
-          .section-title { font-size: 15px; font-weight: 600; color: #ffffff; margin: 20px 0 12px 0; text-transform: uppercase; letter-spacing: 0.05em; }
-          table { width: 100%; border-collapse: collapse; font-size: 13px; background: #161421; border-radius: 8px; overflow: hidden; margin-bottom: 20px; }
-          th { background: #1e1b2e; color: #8e88a8; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; padding: 10px 12px; text-align: left; }
-          .footer { padding: 20px 24px; background: #0e0d16; border-top: 1px solid rgba(255,255,255,0.06); font-size: 12px; color: #6e6884; text-align: center; }
-        </style>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
       </head>
-      <body>
-        <div class="container">
-          <div class="header">
-            <span class="badge">Daily Ritual Report · ${todayStr}</span>
-            <h1 class="title">🐺 Woolf Systems & DSA Tracker</h1>
-            <p class="subtitle">"Systems depth over breadth theater. No slack."</p>
-          </div>
-          <div class="content">
-            <div style="display: flex; gap: 12px; margin-bottom: 20px;">
-              <div style="flex: 1; background: #1a1726; padding: 14px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.06);">
-                <div class="stat-label">Daily Target (3 Min)</div>
-                <div class="stat-val" style="color: ${targetMet ? '#7fd9ab' : '#ff9a63'};">${count} / 3 ${targetMet ? '✅' : '⚡'}</div>
-              </div>
-              <div style="flex: 1; background: #1a1726; padding: 14px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.06);">
-                <div class="stat-label">Current Streak</div>
-                <div class="stat-val" style="color: #a996ff;">🔥 ${streak} Days</div>
-              </div>
+      <body style="margin: 0; padding: 32px 16px; background-color: #07060c; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #f0edf9;">
+        <div style="max-width: 580px; margin: 0 auto; background: #100e18; border: 1px solid rgba(169, 150, 255, 0.16); border-radius: 10px; overflow: hidden;">
+          
+          <!-- Header -->
+          <div style="padding: 24px 24px 20px; border-bottom: 1px solid rgba(169, 150, 255, 0.12); background: #14121f;">
+            <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px;">
+              <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: #6fa8ff;">DAILY STATUS REPORT</span>
+              <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #706a88;">${todayStr}</span>
             </div>
+            <h1 style="margin: 0; font-size: 20px; font-weight: 600; letter-spacing: -0.01em; color: #ffffff;">Woolf Systems // Daily Log</h1>
+          </div>
 
-            <div class="section-title">Today's DSA Submissions (${count})</div>
-            <table>
+          <!-- Body -->
+          <div style="padding: 24px;">
+            
+            <!-- Metric Cards -->
+            <table style="width: 100%; border-collapse: separate; border-spacing: 10px 0; margin-bottom: 24px;">
+              <tr>
+                <td style="width: 50%; background: #171424; border: 1px solid rgba(169, 150, 255, 0.1); border-radius: 8px; padding: 14px 16px;">
+                  <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: #706a88; margin-bottom: 6px;">Daily Target</div>
+                  <div style="font-size: 22px; font-weight: 700; font-family: 'JetBrains Mono', monospace; color: ${targetMet ? '#7fd9ab' : '#ff9a63'};">
+                    ${count} / 3 <span style="font-size: 11px; font-weight: 500; color: #706a88;">${targetMet ? '[MET]' : '[INCOMPLETE]'}</span>
+                  </div>
+                </td>
+                <td style="width: 50%; background: #171424; border: 1px solid rgba(169, 150, 255, 0.1); border-radius: 8px; padding: 14px 16px;">
+                  <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: #706a88; margin-bottom: 6px;">Active Streak</div>
+                  <div style="font-size: 22px; font-weight: 700; font-family: 'JetBrains Mono', monospace; color: #a996ff;">
+                    ${streak} <span style="font-size: 11px; font-weight: 500; color: #706a88;">DAYS</span>
+                  </div>
+                </td>
+              </tr>
+            </table>
+
+            <!-- Problem Log Table -->
+            <div style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.08em; color: #706a88; margin-bottom: 8px;">Submissions (${count})</div>
+            <table style="width: 100%; border-collapse: collapse; background: #14121d; border: 1px solid rgba(169, 150, 255, 0.1); border-radius: 6px; overflow: hidden; margin-bottom: 24px;">
               <thead>
-                <tr>
-                  <th>Problem</th>
-                  <th>Pattern</th>
-                  <th>Diff</th>
-                  <th>Source</th>
+                <tr style="background: #191626; border-bottom: 1px solid #22202c;">
+                  <th style="padding: 8px 12px; font-family: 'JetBrains Mono', monospace; font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: #706a88; text-align: left;">Problem</th>
+                  <th style="padding: 8px 12px; font-family: 'JetBrains Mono', monospace; font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: #706a88; text-align: left;">Pattern</th>
+                  <th style="padding: 8px 12px; font-family: 'JetBrains Mono', monospace; font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: #706a88; text-align: left;">Diff</th>
+                  <th style="padding: 8px 12px; font-family: 'JetBrains Mono', monospace; font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: #706a88; text-align: left;">Source</th>
                 </tr>
               </thead>
               <tbody>
@@ -151,19 +148,25 @@ exports.handler = async function (event, context) {
               </tbody>
             </table>
 
-            <div class="section-title">Failure Log & Flashbacks</div>
+            <!-- Failures -->
+            <div style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.08em; color: #706a88; margin-bottom: 8px;">Failure Log & Flashbacks</div>
             ${failureRows}
 
-            <div style="margin-top: 24px; padding: 14px; background: rgba(169, 150, 255, 0.06); border-radius: 8px; border: 1px solid rgba(169, 150, 255, 0.15);">
-              <div style="font-size: 12px; font-weight: 600; color: #a996ff; margin-bottom: 4px;">📌 REMINDER FOR TOMORROW:</div>
-              <div style="font-size: 13px; color: #d0cce3;">
-                ${targetMet ? 'Great work today. Keep the momentum going tomorrow with 3 problems in C++.' : 'Remember the rule: 3 problems/day minimum, every day, C++ only. Make sure to log every failure!'}
+            <!-- Focus Note -->
+            <div style="margin-top: 20px; padding: 12px 14px; background: #14121d; border: 1px solid rgba(169, 150, 255, 0.1); border-radius: 6px;">
+              <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: #a996ff; margin-bottom: 4px;">PROTOCOL DIRECTIVE</div>
+              <div style="font-size: 12.5px; color: #a6a0bd; line-height: 1.45;">
+                ${targetMet ? 'Daily threshold achieved. Prepare tomorrow\'s 3-problem set in C++.' : 'Minimum standard is 3 problems daily in C++. Log failure patterns for Sunday revision.'}
               </div>
             </div>
+
           </div>
-          <div class="footer">
-            Automated dispatch from Woolf 11-Month Systems/Quant Engine · Netlify Scheduled Function
+
+          <!-- Footer -->
+          <div style="padding: 14px 24px; background: #0c0b12; border-top: 1px solid rgba(169, 150, 255, 0.08); font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: #534e68; text-align: center;">
+            WOOLF SYSTEMS ENGINE // AUTOMATED DISPATCH
           </div>
+
         </div>
       </body>
       </html>
@@ -173,7 +176,7 @@ exports.handler = async function (event, context) {
     const transporter = nodemailer.createTransport({
       host: 'smtp.gmail.com',
       port: 587,
-      secure: false, // TLS
+      secure: false,
       auth: {
         user: gmailUser,
         pass: gmailPass,
@@ -181,9 +184,9 @@ exports.handler = async function (event, context) {
     });
 
     const mailOptions = {
-      from: `"Woolf Roadmap Tracker" <${gmailUser}>`,
+      from: `"Woolf Systems Engine" <${gmailUser}>`,
       to: recipientEmail,
-      subject: `🐺 Daily Report (${todayStr}): ${count}/3 Problems | 🔥 ${streak} Day Streak`,
+      subject: `Woolf Daily Brief // ${todayStr} [${count}/3 Problems | Streak: ${streak}d]`,
       html: emailHtml,
     };
 

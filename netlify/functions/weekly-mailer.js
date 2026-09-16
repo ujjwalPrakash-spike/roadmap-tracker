@@ -61,7 +61,7 @@ exports.handler = async function (event, context) {
     });
 
     const totalWeekProblems = (weekProblems || []).length;
-    const weekTarget = 21; // 3 per day * 7
+    const weekTarget = 21;
     const targetMet = totalWeekProblems >= weekTarget;
 
     // 4. Fetch failures for the week
@@ -88,13 +88,13 @@ exports.handler = async function (event, context) {
       const completedStages = stages.filter(s => s.done).length;
       const pct = stages.length > 0 ? Math.round((completedStages / stages.length) * 100) : 0;
       return `
-        <div style="margin-bottom: 12px; background: #1a1726; padding: 12px 14px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.06);">
-          <div style="display: flex; justify-content: space-between; font-size: 13px; font-weight: 600; color: #ffffff; margin-bottom: 6px;">
+        <div style="margin-bottom: 8px; background: #14121d; padding: 10px 14px; border-radius: 6px; border: 1px solid rgba(169, 150, 255, 0.08);">
+          <div style="display: flex; justify-content: space-between; font-size: 12.5px; font-weight: 500; color: #f0edf9; margin-bottom: 6px;">
             <span>${p.name}</span>
-            <span style="color: #a996ff;">${completedStages}/${stages.length} stages (${pct}%)</span>
+            <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #a996ff;">${completedStages}/${stages.length} [${pct}%]</span>
           </div>
-          <div style="height: 6px; width: 100%; background: #262238; border-radius: 3px; overflow: hidden;">
-            <div style="height: 100%; width: ${pct}%; background: linear-gradient(90deg, #a996ff, #6fa8ff);"></div>
+          <div style="height: 4px; width: 100%; background: #221e33; border-radius: 2px; overflow: hidden;">
+            <div style="height: 100%; width: ${pct}%; background: #a996ff;"></div>
           </div>
         </div>
       `;
@@ -103,9 +103,9 @@ exports.handler = async function (event, context) {
     const patternRowsHtml = Object.entries(patternCounts)
       .sort((a, b) => b[1] - a[1])
       .map(([pat, count]) => `
-        <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; border-bottom: 1px solid #262238; font-size: 13px;">
-          <span style="color: #d0cce3;">${pat}</span>
-          <span style="font-weight: 700; color: #a996ff; background: rgba(169,150,255,0.15); padding: 2px 8px; border-radius: 12px;">${count}</span>
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 7px 12px; border-bottom: 1px solid #1f1c2c; font-size: 12.5px;">
+          <span style="color: #a6a0bd;">${pat}</span>
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 600; color: #a996ff; background: rgba(169,150,255,0.1); padding: 1px 6px; border-radius: 4px;">${count}</span>
         </div>
       `).join('');
 
@@ -114,61 +114,72 @@ exports.handler = async function (event, context) {
       <html>
       <head>
         <meta charset="utf-8">
-        <style>
-          body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #0b0a12; color: #eae7f4; margin: 0; padding: 24px; }
-          .container { max-width: 620px; margin: 0 auto; background: #13111c; border-radius: 12px; border: 1px solid rgba(169, 150, 255, 0.15); overflow: hidden; }
-          .header { background: linear-gradient(135deg, #1f1a33, #12101b); padding: 30px 24px; border-bottom: 1px solid rgba(169, 150, 255, 0.15); }
-          .badge { display: inline-block; padding: 4px 10px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; border-radius: 20px; background: rgba(111, 168, 255, 0.15); color: #6fa8ff; margin-bottom: 10px; }
-          .title { font-size: 24px; font-weight: 700; color: #ffffff; margin: 0 0 6px 0; }
-          .subtitle { font-size: 13px; color: #8e88a8; margin: 0; }
-          .content { padding: 24px; }
-          .section-title { font-size: 14px; font-weight: 600; color: #ffffff; margin: 24px 0 12px 0; text-transform: uppercase; letter-spacing: 0.06em; }
-          .footer { padding: 20px 24px; background: #0e0d16; border-top: 1px solid rgba(255,255,255,0.06); font-size: 12px; color: #6e6884; text-align: center; }
-        </style>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
       </head>
-      <body>
-        <div class="container">
-          <div class="header">
-            <span class="badge">Weekly Systems & DSA Executive Brief</span>
-            <h1 class="title">📅 Week in Review (${startDateStr} → ${endDateStr})</h1>
-            <p class="subtitle">"Sunday is revision day. Redo failed problems from a blank editor."</p>
+      <body style="margin: 0; padding: 32px 16px; background-color: #07060c; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #f0edf9;">
+        <div style="max-width: 600px; margin: 0 auto; background: #100e18; border: 1px solid rgba(169, 150, 255, 0.16); border-radius: 10px; overflow: hidden;">
+          
+          <!-- Header -->
+          <div style="padding: 24px 24px 20px; border-bottom: 1px solid rgba(169, 150, 255, 0.12); background: #14121f;">
+            <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px;">
+              <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: #a996ff;">WEEKLY EXECUTIVE BRIEF</span>
+              <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #706a88;">${startDateStr} &rarr; ${endDateStr}</span>
+            </div>
+            <h1 style="margin: 0; font-size: 20px; font-weight: 600; letter-spacing: -0.01em; color: #ffffff;">Woolf Systems // Weekly Review</h1>
           </div>
-          <div class="content">
-            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 24px;">
-              <div style="background: #1a1726; padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.06); text-align: center;">
-                <div style="font-size: 10px; color: #8e88a8; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px;">Weekly Volume</div>
-                <div style="font-size: 22px; font-weight: 700; color: ${targetMet ? '#7fd9ab' : '#ff9a63'};">${totalWeekProblems} / ${weekTarget}</div>
-              </div>
-              <div style="background: #1a1726; padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.06); text-align: center;">
-                <div style="font-size: 10px; color: #8e88a8; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px;">Difficulty Split</div>
-                <div style="font-size: 12px; font-weight: 600; color: #d0cce3; margin-top: 6px;">
-                  <span style="color:#7fd9ab;">${easyCount}E</span> · <span style="color:#6fa8ff;">${medCount}M</span> · <span style="color:#ff9a63;">${hardCount}H</span>
-                </div>
-              </div>
-              <div style="background: #1a1726; padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.06); text-align: center;">
-                <div style="font-size: 10px; color: #8e88a8; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px;">Failures Logged</div>
-                <div style="font-size: 22px; font-weight: 700; color: #ff9a63;">${(weekFailures || []).length}</div>
-              </div>
+
+          <!-- Body -->
+          <div style="padding: 24px;">
+            
+            <!-- Metric Cards -->
+            <table style="width: 100%; border-collapse: separate; border-spacing: 8px 0; margin-bottom: 22px;">
+              <tr>
+                <td style="width: 33.3%; background: #171424; border: 1px solid rgba(169, 150, 255, 0.1); border-radius: 8px; padding: 12px; text-align: center;">
+                  <div style="font-family: 'JetBrains Mono', monospace; font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.08em; color: #706a88; margin-bottom: 4px;">Weekly Volume</div>
+                  <div style="font-size: 20px; font-weight: 700; font-family: 'JetBrains Mono', monospace; color: ${targetMet ? '#7fd9ab' : '#ff9a63'};">
+                    ${totalWeekProblems} / ${weekTarget}
+                  </div>
+                </td>
+                <td style="width: 33.3%; background: #171424; border: 1px solid rgba(169, 150, 255, 0.1); border-radius: 8px; padding: 12px; text-align: center;">
+                  <div style="font-family: 'JetBrains Mono', monospace; font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.08em; color: #706a88; margin-bottom: 4px;">Difficulty</div>
+                  <div style="font-size: 11px; font-family: 'JetBrains Mono', monospace; font-weight: 600; color: #a6a0bd; margin-top: 4px;">
+                    <span style="color:#7fd9ab;">${easyCount}E</span> &middot; <span style="color:#6fa8ff;">${medCount}M</span> &middot; <span style="color:#ff9a63;">${hardCount}H</span>
+                  </div>
+                </td>
+                <td style="width: 33.3%; background: #171424; border: 1px solid rgba(169, 150, 255, 0.1); border-radius: 8px; padding: 12px; text-align: center;">
+                  <div style="font-family: 'JetBrains Mono', monospace; font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.08em; color: #706a88; margin-bottom: 4px;">Failures</div>
+                  <div style="font-size: 20px; font-weight: 700; font-family: 'JetBrains Mono', monospace; color: #ff9a63;">
+                    ${(weekFailures || []).length}
+                  </div>
+                </td>
+              </tr>
+            </table>
+
+            <!-- Pattern Distribution -->
+            <div style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.08em; color: #706a88; margin-bottom: 8px;">Pattern Distribution</div>
+            <div style="background: #14121d; border: 1px solid rgba(169, 150, 255, 0.1); border-radius: 6px; overflow: hidden; margin-bottom: 22px;">
+              ${patternRowsHtml || '<div style="padding: 14px; text-align: center; color: #706a88; font-size: 12px; font-family: \'JetBrains Mono\', monospace;">NO ACTIVITY RECORDED THIS WEEK</div>'}
             </div>
 
-            <div class="section-title">Pattern Distribution This Week</div>
-            <div style="background: #161421; border-radius: 8px; overflow: hidden; margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.06);">
-              ${patternRowsHtml || '<p style="padding: 14px; text-align: center; color: #8e88a8; font-size: 13px;">No problems recorded this week.</p>'}
-            </div>
-
-            <div class="section-title">Systems Projects Milestones</div>
+            <!-- Projects -->
+            <div style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.08em; color: #706a88; margin-bottom: 8px;">Systems Projects Status</div>
             ${projectListHtml}
 
-            <div style="margin-top: 24px; padding: 16px; background: rgba(111, 168, 255, 0.08); border-radius: 8px; border-left: 4px solid #6fa8ff;">
-              <div style="font-size: 13px; font-weight: 700; color: #6fa8ff; margin-bottom: 4px;">🎯 SUNDAY REVISION PROTOCOL</div>
-              <div style="font-size: 13px; color: #d0cce3; line-height: 1.5;">
-                Spend 2–3 hours today re-solving every starred problem or failure entry from the week on a completely blank editor. Never start next week's topics on shaky foundations.
+            <!-- Sunday Revision Directive -->
+            <div style="margin-top: 22px; padding: 14px 16px; background: #14121d; border: 1px solid rgba(169, 150, 255, 0.15); border-radius: 6px;">
+              <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: #6fa8ff; margin-bottom: 4px;">SUNDAY REVISION DIRECTIVE</div>
+              <div style="font-size: 12.5px; color: #a6a0bd; line-height: 1.5;">
+                Re-solve every starred problem or failure entry from the week on a blank editor before introducing new pattern families.
               </div>
             </div>
+
           </div>
-          <div class="footer">
-            Woolf Systems Engine · Automated Sunday Scheduled Report
+
+          <!-- Footer -->
+          <div style="padding: 14px 24px; background: #0c0b12; border-top: 1px solid rgba(169, 150, 255, 0.08); font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: #534e68; text-align: center;">
+            WOOLF SYSTEMS ENGINE // AUTOMATED WEEKLY DISPATCH
           </div>
+
         </div>
       </body>
       </html>
@@ -185,9 +196,9 @@ exports.handler = async function (event, context) {
     });
 
     const mailOptions = {
-      from: `"Woolf Roadmap Tracker" <${gmailUser}>`,
+      from: `"Woolf Systems Engine" <${gmailUser}>`,
       to: recipientEmail,
-      subject: `🐺 Weekly Review (${startDateStr} → ${endDateStr}): ${totalWeekProblems} Solved | Projects & Revision Brief`,
+      subject: `Woolf Weekly Review // ${startDateStr} to ${endDateStr} [${totalWeekProblems} Solved | Projects & Revision Brief]`,
       html: emailHtml,
     };
 
