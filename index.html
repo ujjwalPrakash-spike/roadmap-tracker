@@ -395,6 +395,17 @@
         </div>
       </div>
 
+      <!-- Pattern Mastery Breakdown Grid -->
+      <div class="card">
+        <div class="card-title">
+          <span>Pattern Mastery Matrix</span>
+          <span style="font-family:var(--mono); font-size:11.5px; color:var(--violet);">Click any pattern to filter</span>
+        </div>
+        <div id="pattern-mastery-grid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(170px, 1fr)); gap:10px; margin-bottom:6px;">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+
       <!-- Problem Bank Explorer -->
       <div class="card">
         <div class="card-title">
@@ -402,18 +413,36 @@
           <span id="curriculum-count-badge" style="font-family:var(--mono); font-size:12px; color:var(--green);">0 solved</span>
         </div>
 
-        <div class="input-row" style="margin-bottom:12px;">
-          <div class="input-group" style="flex:2;">
+        <div class="input-row" style="margin-bottom:12px; flex-wrap:wrap; gap:10px;">
+          <div class="input-group" style="flex:2; min-width:200px;">
             <label class="input-label">Live Search Problems</label>
-            <input type="text" id="curriculum-search" class="text-input" placeholder="Search by name, pattern, or keyword..." oninput="renderCurriculumExplorer()">
+            <input type="text" id="curriculum-search" class="text-input" placeholder="Search by title, pattern, or keyword..." oninput="renderCurriculumExplorer()">
           </div>
-          <div class="input-group" style="flex:1;">
+          <div class="input-group" style="flex:1; min-width:140px;">
             <label class="input-label">Filter Track</label>
             <select id="curriculum-track-filter" class="text-input" onchange="renderCurriculumExplorer()">
               <option value="all">All Tracks</option>
               <option value="neetcode">NeetCode 250</option>
               <option value="google_pyq">Google PYQs</option>
+              <option value="quant_dev">Quant Dev Track</option>
               <option value="cses">CSES Problem Set</option>
+            </select>
+          </div>
+          <div class="input-group" style="flex:1; min-width:120px;">
+            <label class="input-label">Difficulty</label>
+            <select id="curriculum-diff-filter" class="text-input" onchange="renderCurriculumExplorer()">
+              <option value="all">All Diff</option>
+              <option value="Easy">Easy</option>
+              <option value="Medium">Medium</option>
+              <option value="Hard">Hard</option>
+            </select>
+          </div>
+          <div class="input-group" style="flex:1; min-width:120px;">
+            <label class="input-label">Status</label>
+            <select id="curriculum-status-filter" class="text-input" onchange="renderCurriculumExplorer()">
+              <option value="all">All Status</option>
+              <option value="unsolved">Unsolved</option>
+              <option value="solved">Solved</option>
             </select>
           </div>
         </div>
@@ -1404,24 +1433,65 @@
       `).join('');
     }
 
+    let selectedPatternFilter = 'all';
+
+    function setPatternFilter(pattern) {
+      selectedPatternFilter = (selectedPatternFilter === pattern) ? 'all' : pattern;
+      renderCurriculumExplorer();
+    }
+
     function renderCurriculumExplorer() {
       const tbody = document.getElementById('curriculum-tbody');
+      const matrixContainer = document.getElementById('pattern-mastery-grid');
       if (!tbody || typeof CURATED_PROBLEMS === 'undefined') return;
 
       const query = (document.getElementById('curriculum-search')?.value || '').toLowerCase();
       const track = document.getElementById('curriculum-track-filter')?.value || 'all';
+      const diff = document.getElementById('curriculum-diff-filter')?.value || 'all';
+      const status = document.getElementById('curriculum-status-filter')?.value || 'all';
 
       const solvedNames = new Set(localData.problems.map(p => p.name.toLowerCase()));
 
+      // 1. Compute Pattern Breakdown Matrix
+      if (matrixContainer) {
+        const patternMap = {};
+        CURATED_PROBLEMS.forEach(p => {
+          if (!patternMap[p.pattern]) patternMap[p.pattern] = { total: 0, solved: 0 };
+          patternMap[p.pattern].total++;
+          if (solvedNames.has(p.title.toLowerCase())) patternMap[p.pattern].solved++;
+        });
+
+        matrixContainer.innerHTML = Object.entries(patternMap).map(([pat, data]) => {
+          const pct = Math.round((data.solved / data.total) * 100);
+          const isSelected = selectedPatternFilter === pat;
+          return `
+            <div onclick="setPatternFilter('${pat.replace(/'/g, "\\'")}')" style="cursor:pointer; background:var(--surface-alt); border:1px solid ${isSelected ? 'var(--violet)' : 'var(--border)'}; border-radius:6px; padding:10px; transition:border-color 0.2s;">
+              <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:4px;">
+                <span style="font-size:12px; font-weight:600; color:${isSelected ? 'var(--violet)' : 'var(--text)'}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:110px;">${pat}</span>
+                <span style="font-family:var(--mono); font-size:10.5px; color:${data.solved === data.total ? 'var(--green)' : 'var(--muted)'};">${data.solved}/${data.total}</span>
+              </div>
+              <div style="height:4px; width:100%; background:var(--surface); border-radius:2px; overflow:hidden;">
+                <div style="height:100%; width:${pct}%; background:${pct === 100 ? 'var(--green)' : 'linear-gradient(90deg, var(--violet), var(--blue))'};"></div>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+
+      // 2. Filter Problems
       const filtered = CURATED_PROBLEMS.filter(p => {
+        const isDone = solvedNames.has(p.title.toLowerCase());
         const matchesTrack = track === 'all' || p.track === track;
+        const matchesDiff = diff === 'all' || p.difficulty === diff;
+        const matchesPattern = selectedPatternFilter === 'all' || p.pattern === selectedPatternFilter;
+        const matchesStatus = status === 'all' || (status === 'solved' && isDone) || (status === 'unsolved' && !isDone);
         const matchesQuery = !query || p.title.toLowerCase().includes(query) || p.pattern.toLowerCase().includes(query) || p.difficulty.toLowerCase().includes(query);
-        return matchesTrack && matchesQuery;
+        return matchesTrack && matchesDiff && matchesPattern && matchesStatus && matchesQuery;
       });
 
       const solvedCount = CURATED_PROBLEMS.filter(p => solvedNames.has(p.title.toLowerCase())).length;
       const countBadge = document.getElementById('curriculum-count-badge');
-      if (countBadge) countBadge.innerText = `${solvedCount} / ${CURATED_PROBLEMS.length} Solved`;
+      if (countBadge) countBadge.innerText = `${solvedCount} / ${CURATED_PROBLEMS.length} Solved (${Math.round((solvedCount / CURATED_PROBLEMS.length)*100)}%)`;
 
       tbody.innerHTML = filtered.map((p, idx) => {
         const isDone = solvedNames.has(p.title.toLowerCase());
@@ -1429,21 +1499,21 @@
           <tr>
             <td style="font-family:var(--mono); font-size:11px; color:var(--dim);">${idx + 1}</td>
             <td>
-              <div style="font-weight:600; color:var(--text);">${p.title}</div>
-              <a href="${p.url}" target="_blank" rel="noopener noreferrer" style="font-family:var(--mono); font-size:11px; color:var(--blue); text-decoration:none;">
-                ↗ Open on LeetCode
+              <div style="font-weight:600; color:var(--text); font-size:13.5px;">${p.title}</div>
+              <a href="${p.url}" target="_blank" rel="noopener noreferrer" style="font-family:var(--mono); font-size:11px; color:var(--blue); text-decoration:none; display:inline-block; margin-top:2px;">
+                ↗ Open LeetCode
               </a>
             </td>
             <td style="font-family:var(--mono); font-size:11.5px; color:var(--violet);">${p.pattern}</td>
             <td><span class="badge-diff ${p.difficulty}">${p.difficulty}</span></td>
-            <td style="font-family:var(--mono); font-size:11px; text-transform:uppercase; color:var(--dim);">${p.track}</td>
+            <td style="font-family:var(--mono); font-size:10.5px; text-transform:uppercase; color:var(--dim);">${p.track}</td>
             <td>
               <span style="font-family:var(--mono); font-size:11px; font-weight:600; color:${isDone ? 'var(--green)' : 'var(--dim)'};">
                 ${isDone ? '[SOLVED]' : '[UNSOLVED]'}
               </span>
             </td>
             <td>
-              <button class="auth-btn secondary" style="padding:4px 8px; font-size:11px;" onclick="quickLogFromDeck('${p.title.replace(/'/g, "\\'")}', '${p.pattern}', '${p.difficulty}', '${p.track}')">
+              <button class="auth-btn secondary" style="padding:4px 8px; font-size:11px; ${isDone ? 'border-color:var(--green); color:var(--green);' : ''}" onclick="quickLogFromDeck('${p.title.replace(/'/g, "\\'")}', '${p.pattern}', '${p.difficulty}', '${p.track}')">
                 ${isDone ? 'Log Again' : 'Mark Solved'}
               </button>
             </td>
