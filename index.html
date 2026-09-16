@@ -8,6 +8,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <!-- Supabase Client -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- Curated Problem Database & Sheets -->
+  <script src="./problems_dataset.js"></script>
   <style>
     :root {
       --bg: #07060c;
@@ -267,8 +269,9 @@
 
     <!-- Navigation Tabs -->
     <div class="tabs-nav">
-      <button class="tab-btn active" onclick="switchTab('log')">Quick Log</button>
-      <button class="tab-btn" onclick="switchTab('failures')">Failure Log</button>
+      <button class="tab-btn active" onclick="switchTab('log')">Daily Mission & Log</button>
+      <button class="tab-btn" onclick="switchTab('curriculum')">Curriculum & Sheets</button>
+      <button class="tab-btn" onclick="switchTab('failures')">Failure Bank</button>
       <button class="tab-btn" onclick="switchTab('projects')">4 Projects</button>
       <button class="tab-btn" onclick="switchTab('roadmap')">11-Month Plan</button>
       <button class="tab-btn" onclick="switchTab('resources')">Books & Guides</button>
@@ -276,8 +279,28 @@
       <button class="tab-btn" onclick="switchTab('stats')">Analytics</button>
     </div>
 
-    <!-- TAB 1: QUICK LOG -->
+    <!-- TAB 1: DAILY MISSION & QUICK LOG -->
     <div id="tab-log" class="tab-content">
+      
+      <!-- Daily Mission Deck -->
+      <div class="card" style="border-color: var(--border-strong); background: linear-gradient(135deg, rgba(169,150,255,0.04), transparent);">
+        <div class="card-title">
+          <div style="display:flex; align-items:baseline; gap:10px;">
+            <span>Today's 3-Problem Mission</span>
+            <span id="mission-status-tag" style="font-family:var(--mono); font-size:11px; padding:2px 8px; border-radius:4px; background:rgba(111,168,255,0.12); color:var(--blue); border:1px solid rgba(111,168,255,0.25);">[0/3 COMPLETED]</span>
+          </div>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span id="deck-timer-display" style="font-family:var(--mono); font-size:14px; font-weight:700; color:var(--violet); background:var(--surface-alt); padding:4px 10px; border-radius:6px; border:1px solid var(--border);">25:00</span>
+            <button class="auth-btn secondary" style="padding:4px 10px; font-size:11px;" onclick="toggleDeckTimer()" id="timer-toggle-btn">Start Timer</button>
+            <button class="auth-btn secondary" style="padding:4px 10px; font-size:11px;" onclick="resetDeckTimer()">Reset</button>
+          </div>
+        </div>
+        <p style="font-size:12.5px; color:var(--muted); margin-bottom:16px;">Prescribed directly from the NeetCode 250 sequence & your spaced failure bank. Click link to solve on LeetCode.</p>
+        
+        <div id="daily-mission-cards" style="display:flex; flex-direction:column; gap:12px; margin-bottom:16px;">
+          <!-- Populated by JS -->
+        </div>
+      </div>
       <div class="card">
         <div class="card-title">
           <span>Log DSA Problem</span>
@@ -353,6 +376,63 @@
             </thead>
             <tbody id="problems-tbody">
               <tr><td colspan="6" style="text-align:center; padding:22px; color:var(--dim);">No problems logged yet today. 3 problems daily minimum!</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: CURRICULUM & SHEETS -->
+    <div id="tab-curriculum" class="tab-content hidden">
+      <!-- Sheet References Grid -->
+      <div class="card">
+        <div class="card-title">
+          <span>Curated Sheet Hub</span>
+          <span style="font-family:var(--mono); font-size:11.5px; color:var(--violet);">Direct External Sheets</span>
+        </div>
+        <div id="sheet-references-grid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:12px; margin-bottom:12px;">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+
+      <!-- Problem Bank Explorer -->
+      <div class="card">
+        <div class="card-title">
+          <span>Problem Bank & LeetCode Directory</span>
+          <span id="curriculum-count-badge" style="font-family:var(--mono); font-size:12px; color:var(--green);">0 solved</span>
+        </div>
+
+        <div class="input-row" style="margin-bottom:12px;">
+          <div class="input-group" style="flex:2;">
+            <label class="input-label">Live Search Problems</label>
+            <input type="text" id="curriculum-search" class="text-input" placeholder="Search by name, pattern, or keyword..." oninput="renderCurriculumExplorer()">
+          </div>
+          <div class="input-group" style="flex:1;">
+            <label class="input-label">Filter Track</label>
+            <select id="curriculum-track-filter" class="text-input" onchange="renderCurriculumExplorer()">
+              <option value="all">All Tracks</option>
+              <option value="neetcode">NeetCode 250</option>
+              <option value="google_pyq">Google PYQs</option>
+              <option value="cses">CSES Problem Set</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Problem & Link</th>
+                <th>Pattern</th>
+                <th>Diff</th>
+                <th>Track</th>
+                <th>Status</th>
+                <th>1-Click Action</th>
+              </tr>
+            </thead>
+            <tbody id="curriculum-tbody">
+              <!-- Populated by JS -->
             </tbody>
           </table>
         </div>
@@ -1188,7 +1268,258 @@
       `).join('');
     }
 
+    // --- Deck Timer State ---
+    let timerRemainingSec = 25 * 60;
+    let timerRunning = false;
+    let timerInterval = null;
+
+    function toggleDeckTimer() {
+      const btn = document.getElementById('timer-toggle-btn');
+      if (timerRunning) {
+        clearInterval(timerInterval);
+        timerRunning = false;
+        if (btn) btn.innerText = "Resume Timer";
+      } else {
+        timerRunning = true;
+        if (btn) btn.innerText = "Pause Timer";
+        timerInterval = setInterval(() => {
+          if (timerRemainingSec > 0) {
+            timerRemainingSec--;
+            updateTimerDisplay();
+          } else {
+            clearInterval(timerInterval);
+            timerRunning = false;
+            if (btn) btn.innerText = "Time Expired";
+            showToast("25m interview timer completed.");
+          }
+        }, 1000);
+      }
+    }
+
+    function resetDeckTimer(mins = 25) {
+      clearInterval(timerInterval);
+      timerRunning = false;
+      timerRemainingSec = mins * 60;
+      const btn = document.getElementById('timer-toggle-btn');
+      if (btn) btn.innerText = "Start Timer";
+      updateTimerDisplay();
+    }
+
+    function updateTimerDisplay() {
+      const el = document.getElementById('deck-timer-display');
+      if (!el) return;
+      const m = Math.floor(timerRemainingSec / 60);
+      const s = timerRemainingSec % 60;
+      el.innerText = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+    }
+
+    // --- Daily Mission Deck Logic ---
+    function renderDailyMission() {
+      const container = document.getElementById('daily-mission-cards');
+      if (!container || typeof CURATED_PROBLEMS === 'undefined') return;
+
+      const todayStr = new Date().toISOString().slice(0, 10);
+      const todaySolved = localData.problems.filter(p => p.logged_at === todayStr);
+
+      const solvedNames = new Set(localData.problems.map(p => p.name.toLowerCase()));
+      const unsolved = CURATED_PROBLEMS.filter(p => !solvedNames.has(p.title.toLowerCase()));
+
+      const missionItems = [];
+      if (unsolved.length > 0) missionItems.push(unsolved[0]);
+      if (unsolved.length > 1) missionItems.push(unsolved[1]);
+      if (localData.failures.length > 0) {
+        missionItems.push({
+          id: 'rev-1',
+          title: localData.failures[0].problem_name,
+          pattern: localData.failures[0].pattern,
+          difficulty: 'Medium',
+          url: `https://leetcode.com/problemset/all/?search=${encodeURIComponent(localData.failures[0].problem_name)}`,
+          isSpacedReview: true,
+          reason: localData.failures[0].reason
+        });
+      } else if (unsolved.length > 2) {
+        missionItems.push(unsolved[2]);
+      }
+
+      const completedCount = Math.min(3, todaySolved.length);
+      const statusTag = document.getElementById('mission-status-tag');
+      if (statusTag) {
+        statusTag.innerText = `[${completedCount}/3 COMPLETED]`;
+        statusTag.style.color = completedCount >= 3 ? 'var(--green)' : 'var(--blue)';
+      }
+
+      container.innerHTML = missionItems.map((item, idx) => {
+        const isCompleted = solvedNames.has(item.title.toLowerCase()) && todaySolved.some(p => p.name.toLowerCase() === item.title.toLowerCase());
+        return `
+          <div style="background: var(--surface-alt); border: 1px solid ${isCompleted ? 'rgba(127,217,171,0.3)' : 'var(--border)'}; border-left: 3px solid ${item.isSpacedReview ? 'var(--amber)' : 'var(--violet)'}; border-radius: 8px; padding: 14px 16px;">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:8px; margin-bottom:8px;">
+              <div>
+                <div style="font-family:var(--mono); font-size:10px; text-transform:uppercase; letter-spacing:0.08em; color:${item.isSpacedReview ? 'var(--amber)' : 'var(--dim)'}; margin-bottom:2px;">
+                  ${item.isSpacedReview ? 'SLOT ' + (idx+1) + ' · SPACED REVISION' : 'SLOT ' + (idx+1) + ' · CURRICULUM'}
+                </div>
+                <div style="font-size:15px; font-weight:600; color:var(--text);">
+                  ${item.title}
+                </div>
+              </div>
+              <div style="display:flex; align-items:center; gap:8px;">
+                <span class="badge-diff ${item.difficulty}">${item.difficulty}</span>
+                <a href="${item.url}" target="_blank" rel="noopener noreferrer" style="font-family:var(--mono); font-size:11.5px; color:var(--blue); text-decoration:none; padding:3px 8px; border:1px solid rgba(111,168,255,0.25); border-radius:4px; background:rgba(111,168,255,0.06);">
+                  ↗ Open LeetCode
+                </a>
+              </div>
+            </div>
+
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+              <div style="font-family:var(--mono); font-size:11.5px; color:var(--violet);">
+                ${item.pattern} ${item.reason ? '<span style="color:var(--dim);">· Why missed: ' + item.reason + '</span>' : ''}
+              </div>
+              <div style="display:flex; gap:6px;">
+                <button class="auth-btn" style="padding:4px 10px; font-size:11px; ${isCompleted ? 'background:#7fd9ab;' : ''}" onclick="quickLogFromDeck('${item.title.replace(/'/g, "\\'")}', '${item.pattern}', '${item.difficulty}', 'neetcode')">
+                  ${isCompleted ? '✓ Solved' : '1-Click Solve'}
+                </button>
+                <button class="auth-btn secondary" style="padding:4px 8px; font-size:11px;" onclick="quickFailFromDeck('${item.title.replace(/'/g, "\\'")}', '${item.pattern}')">
+                  Fail / Revisit
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // --- Curated Sheets & Problem Explorer ---
+    function renderSheetReferences() {
+      const container = document.getElementById('sheet-references-grid');
+      if (!container || typeof SHEET_REFERENCES === 'undefined') return;
+
+      container.innerHTML = SHEET_REFERENCES.map(s => `
+        <div style="background:var(--surface-alt); border:1px solid var(--border); border-radius:8px; padding:12px 14px;">
+          <div style="font-family:var(--mono); font-size:9.5px; text-transform:uppercase; color:var(--dim); margin-bottom:3px;">${s.category}</div>
+          <div style="font-size:14px; font-weight:600; color:var(--text); margin-bottom:4px;">${s.name}</div>
+          <p style="font-size:11.5px; color:var(--muted); margin-bottom:8px; line-height:1.4;">${s.description}</p>
+          <a href="${s.url}" target="_blank" rel="noopener noreferrer" style="font-family:var(--mono); font-size:11px; color:var(--violet); text-decoration:none; display:inline-flex; align-items:center; gap:4px;">
+            ↗ Open Sheet (${s.total} Probs)
+          </a>
+        </div>
+      `).join('');
+    }
+
+    function renderCurriculumExplorer() {
+      const tbody = document.getElementById('curriculum-tbody');
+      if (!tbody || typeof CURATED_PROBLEMS === 'undefined') return;
+
+      const query = (document.getElementById('curriculum-search')?.value || '').toLowerCase();
+      const track = document.getElementById('curriculum-track-filter')?.value || 'all';
+
+      const solvedNames = new Set(localData.problems.map(p => p.name.toLowerCase()));
+
+      const filtered = CURATED_PROBLEMS.filter(p => {
+        const matchesTrack = track === 'all' || p.track === track;
+        const matchesQuery = !query || p.title.toLowerCase().includes(query) || p.pattern.toLowerCase().includes(query) || p.difficulty.toLowerCase().includes(query);
+        return matchesTrack && matchesQuery;
+      });
+
+      const solvedCount = CURATED_PROBLEMS.filter(p => solvedNames.has(p.title.toLowerCase())).length;
+      const countBadge = document.getElementById('curriculum-count-badge');
+      if (countBadge) countBadge.innerText = `${solvedCount} / ${CURATED_PROBLEMS.length} Solved`;
+
+      tbody.innerHTML = filtered.map((p, idx) => {
+        const isDone = solvedNames.has(p.title.toLowerCase());
+        return `
+          <tr>
+            <td style="font-family:var(--mono); font-size:11px; color:var(--dim);">${idx + 1}</td>
+            <td>
+              <div style="font-weight:600; color:var(--text);">${p.title}</div>
+              <a href="${p.url}" target="_blank" rel="noopener noreferrer" style="font-family:var(--mono); font-size:11px; color:var(--blue); text-decoration:none;">
+                ↗ Open on LeetCode
+              </a>
+            </td>
+            <td style="font-family:var(--mono); font-size:11.5px; color:var(--violet);">${p.pattern}</td>
+            <td><span class="badge-diff ${p.difficulty}">${p.difficulty}</span></td>
+            <td style="font-family:var(--mono); font-size:11px; text-transform:uppercase; color:var(--dim);">${p.track}</td>
+            <td>
+              <span style="font-family:var(--mono); font-size:11px; font-weight:600; color:${isDone ? 'var(--green)' : 'var(--dim)'};">
+                ${isDone ? '[SOLVED]' : '[UNSOLVED]'}
+              </span>
+            </td>
+            <td>
+              <button class="auth-btn secondary" style="padding:4px 8px; font-size:11px;" onclick="quickLogFromDeck('${p.title.replace(/'/g, "\\'")}', '${p.pattern}', '${p.difficulty}', '${p.track}')">
+                ${isDone ? 'Log Again' : 'Mark Solved'}
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    async function quickLogFromDeck(name, pattern, diff, source) {
+      const todayStr = new Date().toISOString().slice(0, 10);
+      const newProb = {
+        id: Date.now().toString(),
+        name,
+        source: source || 'neetcode',
+        difficulty: diff || 'Medium',
+        pattern: pattern || 'Arrays & Hashing',
+        time_spent_min: 25,
+        logged_at: todayStr,
+        created_at: new Date().toISOString()
+      };
+
+      localData.problems.unshift(newProb);
+      saveLocal();
+      renderAll();
+      showToast(`Recorded "${name}" as solved.`);
+
+      if (sbClient && currentUser) {
+        try {
+          await sbClient.from('problems').insert([{
+            user_id: currentUser.id,
+            name,
+            source: newProb.source,
+            difficulty: newProb.difficulty,
+            pattern: newProb.pattern,
+            time_spent_min: 25,
+            logged_at: todayStr
+          }]);
+        } catch (e) {
+          console.warn("Supabase log notice:", e);
+        }
+      }
+    }
+
+    function quickFailFromDeck(name, pattern) {
+      const reason = prompt(`Root cause for missing "${name}":`, "Missed edge case / wrong recursive state");
+      if (!reason) return;
+
+      const failObj = {
+        id: Date.now().toString(),
+        problem_name: name,
+        pattern: pattern,
+        reason: reason.trim(),
+        reviewed: false,
+        logged_at: new Date().toISOString().slice(0, 10)
+      };
+
+      localData.failures.unshift(failObj);
+      saveLocal();
+      renderAll();
+      showToast(`Enrolled "${name}" in Sunday Revision Bank.`);
+
+      if (sbClient && currentUser) {
+        sbClient.from('failures').insert([{
+          user_id: currentUser.id,
+          problem_name: failObj.problem_name,
+          pattern: failObj.pattern,
+          reason: failObj.reason,
+          reviewed: false
+        }]);
+      }
+    }
+
     function renderAll() {
+      renderDailyMission();
+      renderSheetReferences();
+      renderCurriculumExplorer();
       renderProblemsTable();
       renderFailures();
       if (!localData.projects || localData.projects.length === 0) {
