@@ -86,13 +86,15 @@
       vertical-align: middle;
     }
 
-    :root {
-      --bg: #0b0f19;
-      --surface: #111827;
-      --surface-alt: #1e293b;
-      --surface-raised: #334155;
-      --border: rgba(255, 255, 255, 0.09);
-      --border-strong: rgba(99, 102, 241, 0.35);
+    
+    /* --- Dynamic 4-Theme Palettes --- */
+    :root, [data-theme="obsidian"] {
+      --bg: #0a0c14;
+      --surface: #111422;
+      --surface-alt: #181d30;
+      --surface-raised: #242b45;
+      --border: rgba(255, 255, 255, 0.08);
+      --border-strong: rgba(129, 140, 248, 0.35);
       --text: #f8fafc;
       --muted: #94a3b8;
       --dim: #64748b;
@@ -107,6 +109,102 @@
       --mono: 'JetBrains Mono', monospace;
       --sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     }
+
+    [data-theme="emerald"] {
+      --bg: #060d09;
+      --surface: #0b1710;
+      --surface-alt: #112218;
+      --surface-raised: #1a3325;
+      --border: rgba(255, 255, 255, 0.08);
+      --border-strong: rgba(16, 185, 129, 0.4);
+      --text: #f0fdf4;
+      --muted: #86efac;
+      --dim: #4ade80;
+      --violet: #10b981;
+      --violet-glow: rgba(16, 185, 129, 0.3);
+      --indigo: #059669;
+      --blue: #34d399;
+      --amber: #fbbf24;
+      --green: #22c55e;
+      --rose: #f43f5e;
+    }
+
+    [data-theme="sapphire"] {
+      --bg: #060c18;
+      --surface: #0c162a;
+      --surface-alt: #13213c;
+      --surface-raised: #1c2f54;
+      --border: rgba(255, 255, 255, 0.08);
+      --border-strong: rgba(56, 189, 248, 0.4);
+      --text: #f0f9ff;
+      --muted: #93c5fd;
+      --dim: #60a5fa;
+      --violet: #38bdf8;
+      --violet-glow: rgba(56, 189, 248, 0.3);
+      --indigo: #0284c7;
+      --blue: #60a5fa;
+      --amber: #fbbf24;
+      --green: #34d399;
+      --rose: #f43f5e;
+    }
+
+    [data-theme="sunset"] {
+      --bg: #100b09;
+      --surface: #1a120e;
+      --surface-alt: #261b15;
+      --surface-raised: #38271e;
+      --border: rgba(255, 255, 255, 0.08);
+      --border-strong: rgba(245, 158, 11, 0.4);
+      --text: #fffbeb;
+      --muted: #fde68a;
+      --dim: #fbbf24;
+      --violet: #f59e0b;
+      --violet-glow: rgba(245, 158, 11, 0.3);
+      --indigo: #d97706;
+      --blue: #fb923c;
+      --amber: #f59e0b;
+      --green: #10b981;
+      --rose: #f43f5e;
+    }
+
+    /* Card Spotlight Hover Glow */
+    .card, .cyber-mission-card {
+      position: relative;
+      background-clip: padding-box;
+    }
+    .card::after, .cyber-mission-card::after {
+      content: "";
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      border-radius: inherit;
+      background: radial-gradient(400px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(255,255,255,0.06), transparent 80%);
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    .card:hover::after, .cyber-mission-card:hover::after {
+      opacity: 1;
+    }
+
+    .theme-toggle-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--surface-alt);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-family: var(--mono);
+      font-size: 11px;
+      padding: 5px 12px;
+      border-radius: 20px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .theme-toggle-btn:hover {
+      border-color: var(--border-strong);
+      transform: scale(1.02);
+    }
+
     * { box-sizing: border-box; margin: 0; padding: 0; }
     html { scroll-behavior: smooth; }
     body {
@@ -324,6 +422,9 @@
       <div class="brand-tag">Systems & Quant</div>
     </div>
     <div class="header-stats">
+      <button class="theme-toggle-btn" onclick="cycleTheme()" id="theme-btn" title="Click to cycle themes">
+        🎨 <span id="theme-name-label">Obsidian</span>
+      </button>
       <div class="stat-pill">Streak: <b id="stat-streak">0</b>d</div>
       <div class="stat-pill">Today: <b id="stat-today">0/3</b></div>
       <div class="stat-pill">CF: <b id="stat-cf">--</b></div>
@@ -353,6 +454,15 @@
         <div class="hud-tag green"><span style="display:inline-block; width:7px; height:7px; border-radius:50%; background:var(--green); box-shadow:0 0 8px rgba(16,185,129,0.6);"></span> <b style="color:var(--text);">Daily Focus Active</b></div>
         <div class="hud-tag violet">Level: <b id="hud-rank-val" style="color:var(--violet);">Level 1 · Pattern Explorer</b></div>
         <div class="hud-tag blue">Total XP: <b id="hud-xp-val" style="color:var(--blue);">0 XP</b></div>
+        <div class="hud-tag" style="min-width:140px;">
+          <div style="display:flex; justify-content:space-between; font-size:10px; margin-bottom:2px;">
+            <span>Next Level</span>
+            <span id="hud-xp-pct">0%</span>
+          </div>
+          <div style="height:4px; width:100%; background:var(--surface-raised); border-radius:2px; overflow:hidden;">
+            <div id="hud-xp-bar" style="height:100%; width:0%; background:linear-gradient(90deg, var(--violet), var(--blue)); transition:width 0.3s;"></div>
+          </div>
+        </div>
       </div>
       <div class="hud-stat-group">
         <div class="hud-tag">Curated Bank: <b style="color:var(--text);">327 Problems</b></div>
@@ -960,6 +1070,7 @@
 
     // --- Init ---
     document.addEventListener('DOMContentLoaded', () => {
+      initTheme();
       renderRoadmap();
       initSupabase();
       setupKeyboardShortcuts();
@@ -1906,6 +2017,75 @@
     // CYBERNETIC QUANT HUD, AUDIO SYNTH, AND AMBIENT CANVAS GRAPH
     // =========================================================================
     
+    
+    // --- Theme Engine & Spotlight Lighting ---
+    const THEMES = [
+      { id: "obsidian", name: "Obsidian" },
+      { id: "emerald", name: "Emerald" },
+      { id: "sapphire", name: "Sapphire" },
+      { id: "sunset", name: "Sunset" }
+    ];
+    let currentThemeIdx = 0;
+
+    function initTheme() {
+      const saved = localStorage.getItem('woolf_theme') || 'obsidian';
+      const idx = THEMES.findIndex(t => t.id === saved);
+      currentThemeIdx = idx >= 0 ? idx : 0;
+      applyTheme(THEMES[currentThemeIdx].id);
+    }
+
+    function cycleTheme() {
+      currentThemeIdx = (currentThemeIdx + 1) % THEMES.length;
+      const theme = THEMES[currentThemeIdx];
+      applyTheme(theme.id);
+      playClickBeep();
+      showToast(`Switched theme: ${theme.name}`);
+    }
+
+    function applyTheme(themeId) {
+      document.documentElement.setAttribute('data-theme', themeId);
+      localStorage.setItem('woolf_theme', themeId);
+      const label = document.getElementById('theme-name-label');
+      const found = THEMES.find(t => t.id === themeId);
+      if (label && found) label.innerText = found.name;
+    }
+
+    // Cursor spotlight glow listener
+    document.addEventListener('mousemove', (e) => {
+      document.querySelectorAll('.card, .cyber-mission-card').forEach(card => {
+        const rect = card.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        card.style.setProperty('--mouse-x', `${x}px`);
+        card.style.setProperty('--mouse-y', `${y}px`);
+      });
+    });
+
+    // Update Level Progress Bar
+    function updateLevelProgressBar(xp) {
+      let currentLevelFloor = 0;
+      let nextLevelTarget = 100;
+      if (xp >= 1800) {
+        currentLevelFloor = 1800;
+        nextLevelTarget = 3000;
+      } else if (xp >= 800) {
+        currentLevelFloor = 800;
+        nextLevelTarget = 1800;
+      } else if (xp >= 300) {
+        currentLevelFloor = 300;
+        nextLevelTarget = 800;
+      } else if (xp >= 100) {
+        currentLevelFloor = 100;
+        nextLevelTarget = 300;
+      }
+      const range = nextLevelTarget - currentLevelFloor;
+      const progress = Math.max(0, Math.min(100, Math.round(((xp - currentLevelFloor) / range) * 100)));
+      const pctEl = document.getElementById('hud-xp-pct');
+      const barEl = document.getElementById('hud-xp-bar');
+      if (pctEl) pctEl.innerText = `${progress}%`;
+      if (barEl) barEl.style.width = `${progress}%`;
+    }
+
     // --- 1. Audio FX Synthesizer (Web Audio API) ---
     let audioFxEnabled = true;
     let audioCtx = null;
@@ -1969,6 +2149,8 @@
     }
 
     function updateHUDStats() {
+      const { xp, rank } = computeXPAndRank();
+      updateLevelProgressBar(xp);
       const { xp, rank } = computeXPAndRank();
       const rankEl = document.getElementById('hud-rank-val');
       const xpEl = document.getElementById('hud-xp-val');
