@@ -871,8 +871,30 @@
 
       if (url && key && window.supabase) {
         try {
-          sbClient = window.supabase.createClient(url, key);
+          sbClient = window.supabase.createClient(url, key, {
+            auth: {
+              persistSession: true,
+              autoRefreshToken: true,
+              detectSessionInUrl: true,
+              storage: window.localStorage
+            }
+          });
           document.getElementById('config-banner').classList.add('hidden');
+          
+          // Persistent auth change listener to keep user logged in across reloads
+          sbClient.auth.onAuthStateChange(async (event, session) => {
+            if (session && session.user) {
+              currentUser = session.user;
+              updateAuthUI(true);
+              await ensureUserInitialized();
+              fetchCloudData();
+            } else if (event === 'SIGNED_OUT') {
+              currentUser = null;
+              updateAuthUI(false);
+              loadLocalFallback();
+            }
+          });
+
           checkAuthSession();
         } catch (e) {
           console.warn("Supabase init error:", e);
@@ -887,7 +909,7 @@
       if (!sbClient) return;
       try {
         const { data: { session } } = await sbClient.auth.getSession();
-        if (session) {
+        if (session && session.user) {
           currentUser = session.user;
           updateAuthUI(true);
           await ensureUserInitialized();

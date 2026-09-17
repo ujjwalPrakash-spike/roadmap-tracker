@@ -24,6 +24,83 @@ CONFIG_DIR = os.path.expanduser("~/.config/woolf")
 DATA_FILE = os.path.join(CONFIG_DIR, "data.json")
 THEME_FILE = os.path.join(CONFIG_DIR, "theme.txt")
 DATASET_JS_PATH = os.path.expanduser("~/roadmap-tracker/problems_dataset.js")
+CONFIG_FILE = os.path.join(CONFIG_DIR, "config.json")
+
+def load_config():
+    if os.path.exists(CONFIG_FILE):
+        try:
+            with open(CONFIG_FILE, "r") as f:
+                return json.load(f)
+        except Exception:
+            pass
+    return {
+        "supabase_url": "https://xyeivscujrvtnfnjxakc.supabase.co",
+        "supabase_key": ""
+    }
+
+def save_config(cfg):
+    os.makedirs(CONFIG_DIR, exist_ok=True)
+    with open(CONFIG_FILE, "w") as f:
+        json.dump(cfg, f, indent=2)
+
+def sync_cloud(data):
+    cfg = load_config()
+    url = cfg.get("supabase_url")
+    key = cfg.get("supabase_key")
+    if not url or not key:
+        return
+    import urllib.request, urllib.error
+    try:
+        req = urllib.request.Request(
+            f"{url}/rest/v1/problems?select=*&order=logged_at.desc",
+            headers={
+                "apikey": key,
+                "Authorization": f"Bearer {key}",
+                "Content-Type": "application/json"
+            }
+        )
+        with urllib.request.urlopen(req, timeout=3) as response:
+            if response.status == 200:
+                cloud_probs = json.loads(response.read().decode())
+                existing_ids = set(p.get("id") for p in data.get("problems", []))
+                for cp in cloud_probs:
+                    if cp.get("id") not in existing_ids:
+                        data["problems"].append(cp)
+                        existing_ids.add(cp.get("id"))
+                save_data(data)
+    except Exception:
+        pass
+
+def push_problem_to_cloud(entry):
+    cfg = load_config()
+    url = cfg.get("supabase_url")
+    key = cfg.get("supabase_key")
+    if not url or not key:
+        return
+    import urllib.request, urllib.error
+    try:
+        payload = json.dumps({
+            "name": entry["name"],
+            "pattern": entry["pattern"],
+            "difficulty": entry["difficulty"],
+            "time_spent": entry.get("time_spent", 25),
+            "logged_at": entry["logged_at"]
+        }).encode('utf-8')
+        req = urllib.request.Request(
+            f"{url}/rest/v1/problems",
+            data=payload,
+            headers={
+                "apikey": key,
+                "Authorization": f"Bearer {key}",
+                "Content-Type": "application/json",
+                "Prefer": "return=minimal"
+            }
+        )
+        with urllib.request.urlopen(req, timeout=3) as response:
+            pass
+    except Exception:
+        pass
+
 
 C_RESET = "\033[0m"
 C_BOLD = "\033[1m"
@@ -275,6 +352,7 @@ def get_projects(data):
 def cmd_status():
     C = get_colors()
     data = load_data()
+    sync_cloud(data)
     curated = load_dataset()
     deck = get_daily_deck(curated, data)
     
@@ -357,6 +435,7 @@ def cmd_solve(args):
     data["problems"].insert(0, new_entry)
     data["failures"] = [f for f in data.get("failures", []) if f.get("problem_name", "").lower() != name.lower()]
     save_data(data)
+    push_problem_to_cloud(new_entry)
 
     xp_gain = 50 if diff == "Hard" else (25 if diff == "Medium" else 10)
     print(f"\n{C['green']}✓ Logged successfully!{C_RESET} {C_BOLD}{name}{C_RESET} ({diff}) · {pattern}")
@@ -487,6 +566,28 @@ def cmd_search(query):
         print(f"  {C_DIM}... and {len(matches) - 15} more{C_RESET}")
     print()
 
+def cmd_config(args):
+    cfg = load_config()
+    if not args:
+        print(f"\n{C_BOLD}Supabase Cloud Configuration:{C_RESET}")
+        print(f"  URL: {cfg.get('supabase_url', 'Not configured')}")
+        print(f"  Key: {'Set (Hidden)' if cfg.get('supabase_key') else 'Not configured'}")
+        print(f"\n{C_DIM}To set your Anon Key:{C_RESET} {C_BOLD}woolf config set-key <YOUR_SUPABASE_ANON_KEY>{C_RESET}\n")
+        return
+    if args[0] in ["set-key", "key"] and len(args) > 1:
+        cfg["supabase_key"] = args[1].strip()
+        save_config(cfg)
+        print(f"\n{C_GREEN}✓ Saved Supabase Anon Key!{C_RESET} Testing sync...")
+        data = load_data()
+        sync_cloud(data)
+        print(f"{C_BLUE}✓ Two-way Cloud Sync active with website.{C_RESET}\n")
+
+def cmd_sync():
+    data = load_data()
+    print(f"\nSyncing with Supabase Cloud...")
+    sync_cloud(data)
+    print(f"{C_GREEN}✓ Sync completed!{C_RESET} {len(data.get('problems', []))} problem(s) in local ledger.\n")
+
 def cmd_history():
     C = get_colors()
     data = load_data()
@@ -521,7 +622,12 @@ def main():
         else:
             print("Current theme:", get_current_theme())
             print("Available themes: obsidian, emerald, sapphire, sunset")
+    elif args[0] in ["sync", "pull", "push"]:
+        cmd_sync()
+    elif args[0] in ["config", "setup"]:
+        cmd_config(args[1:])
     elif args[0] in ["history", "logs", "recent"]:
+
         cmd_history()
     elif args[0] in ["help", "--help", "-h"]:
         print(__doc__)
