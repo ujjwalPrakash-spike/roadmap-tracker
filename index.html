@@ -11,6 +11,99 @@
   <!-- Curated Problem Database & Sheets -->
   <script src="./problems_dataset.js"></script>
   <style>
+    /* --- Cybernetic Quant & HUD Aesthetics --- */
+    #bg-canvas {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw; height: 100vh;
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0.35;
+    }
+
+    .app-container {
+      position: relative;
+      z-index: 1;
+    }
+
+    .cyber-hud-strip {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+      background: rgba(16, 14, 24, 0.75);
+      border: 1px solid var(--border-strong);
+      border-radius: 10px;
+      padding: 9px 18px;
+      margin-bottom: 20px;
+      font-family: var(--mono);
+      font-size: 11px;
+      backdrop-filter: blur(14px);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.35);
+    }
+    .hud-stat-group {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .hud-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--dim);
+    }
+    .hud-tag b {
+      color: var(--text);
+      font-weight: 600;
+    }
+    .hud-tag.green b { color: var(--green); text-shadow: 0 0 8px rgba(127,217,171,0.4); }
+    .hud-tag.violet b { color: var(--violet); text-shadow: 0 0 8px rgba(169,150,255,0.4); }
+    .hud-tag.blue b { color: var(--blue); text-shadow: 0 0 8px rgba(111,168,255,0.4); }
+    .hud-tag.amber b { color: var(--amber); text-shadow: 0 0 8px rgba(255,154,99,0.4); }
+
+    /* Cyber Card Accents */
+    .cyber-mission-card {
+      position: relative;
+      border: 1px solid var(--border);
+      background: linear-gradient(135deg, rgba(23, 20, 36, 0.92), rgba(16, 14, 24, 0.88));
+      border-radius: 10px;
+      padding: 16px 18px;
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      backdrop-filter: blur(16px);
+      overflow: hidden;
+    }
+    .cyber-mission-card::before {
+      content: "⌜";
+      position: absolute;
+      top: 2px; left: 6px;
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--border-strong);
+      pointer-events: none;
+    }
+    .cyber-mission-card::after {
+      content: "⌟";
+      position: absolute;
+      bottom: 2px; right: 6px;
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--border-strong);
+      pointer-events: none;
+    }
+    .cyber-mission-card:hover {
+      border-color: var(--border-strong);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 30px rgba(169,150,255,0.12);
+    }
+    .sparkline-live {
+      display: inline-block;
+      width: 42px;
+      height: 12px;
+      vertical-align: middle;
+    }
+
     :root {
       --bg: #07060c;
       --surface: #100e18;
@@ -235,6 +328,7 @@
   </style>
 </head>
 <body>
+  <canvas id="bg-canvas"></canvas>
 
   <div id="progress-rail"></div>
 
@@ -264,6 +358,23 @@
           <div style="font-size:12.5px; color:var(--muted);">Store keys locally to enable cloud sync and automated dispatches.</div>
         </div>
         <button class="auth-btn secondary" onclick="openConfigModal()">Setup Keys</button>
+      </div>
+    </div>
+
+
+    <!-- Quant HUD Telemetry Strip -->
+    <div class="cyber-hud-strip">
+      <div class="hud-stat-group">
+        <div class="hud-tag green"><span style="display:inline-block; width:6px; height:6px; border-radius:50%; background:var(--green); box-shadow:0 0 6px var(--green);"></span> ENGINE: <b>QUANT.V2 ACTIVE</b></div>
+        <div class="hud-tag violet">OPERATOR RANK: <b id="hud-rank-val">LVL 1 · CADET</b></div>
+        <div class="hud-tag blue">TOTAL XP: <b id="hud-xp-val">0 XP</b></div>
+      </div>
+      <div class="hud-stat-group">
+        <div class="hud-tag">TARGET REPO: <b>327 ASSETS</b></div>
+        <div class="hud-tag">LATENCY: <b id="hud-latency-val" style="color:var(--dim);">0.18ms</b></div>
+        <div class="hud-tag" style="cursor:pointer;" onclick="toggleAudioFx()" title="Toggle Web Audio Synthesizer Feedback">
+          AUDIO FX: <b id="hud-audio-val" style="color:var(--green);">ON</b>
+        </div>
       </div>
     </div>
 
@@ -400,6 +511,19 @@
         </div>
         <div id="sheet-references-grid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:12px; margin-bottom:12px;">
           <!-- Populated by JS -->
+        </div>
+      </div>
+
+      <!-- Interactive 18-Pattern Radar Matrix -->
+      <div class="card" style="border-color:var(--border-strong); background:linear-gradient(135deg, rgba(169,150,255,0.04), transparent);">
+        <div class="card-title">
+          <span>Algorithmic Pattern Radar</span>
+          <span style="font-family:var(--mono); font-size:11.5px; color:var(--violet);">18-Axis Competency Map</span>
+        </div>
+        <div style="display:flex; justify-content:center; align-items:center; padding:10px 0; overflow-x:auto;">
+          <svg id="pattern-radar-svg" width="340" height="340" viewBox="0 0 340 340" style="max-width:100%; height:auto;">
+            <!-- Rendered by JS -->
+          </svg>
         </div>
       </div>
 
@@ -1387,34 +1511,38 @@
 
       container.innerHTML = missionItems.map((item, idx) => {
         const isCompleted = solvedNames.has(item.title.toLowerCase()) && todaySolved.some(p => p.name.toLowerCase() === item.title.toLowerCase());
+        const slotCode = item.id ? item.id.toUpperCase() : ('SLOT-' + (idx+1));
         return `
-          <div style="background: var(--surface-alt); border: 1px solid ${isCompleted ? 'rgba(127,217,171,0.3)' : 'var(--border)'}; border-left: 3px solid ${item.isSpacedReview ? 'var(--amber)' : 'var(--violet)'}; border-radius: 8px; padding: 14px 16px;">
-            <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:8px; margin-bottom:8px;">
+          <div class="cyber-mission-card" style="border-left: 3px solid ${isCompleted ? 'var(--green)' : (item.isSpacedReview ? 'var(--amber)' : 'var(--violet)')}; ${isCompleted ? 'box-shadow: 0 0 16px rgba(127,217,171,0.15);' : ''}">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:8px; margin-bottom:10px;">
               <div>
-                <div style="font-family:var(--mono); font-size:10px; text-transform:uppercase; letter-spacing:0.08em; color:${item.isSpacedReview ? 'var(--amber)' : 'var(--dim)'}; margin-bottom:2px;">
-                  ${item.isSpacedReview ? 'SLOT ' + (idx+1) + ' · SPACED REVISION' : 'SLOT ' + (idx+1) + ' · CURRICULUM'}
+                <div style="display:flex; align-items:center; gap:8px; font-family:var(--mono); font-size:10px; text-transform:uppercase; letter-spacing:0.1em; color:${item.isSpacedReview ? 'var(--amber)' : 'var(--dim)'}; margin-bottom:4px;">
+                  <span>${item.isSpacedReview ? 'SLOT ' + (idx+1) + ' · SPACED REVISION' : 'SLOT ' + (idx+1) + ' · CURRICULUM'}</span>
+                  <span style="color:var(--dim);">//</span>
+                  <span style="color:var(--violet); font-weight:600;">${slotCode}</span>
                 </div>
-                <div style="font-size:15px; font-weight:600; color:var(--text);">
+                <div style="font-size:16px; font-weight:700; color:var(--text); letter-spacing:-0.01em;">
                   ${item.title}
                 </div>
               </div>
               <div style="display:flex; align-items:center; gap:8px;">
                 <span class="badge-diff ${item.difficulty}">${item.difficulty}</span>
-                <a href="${item.url}" target="_blank" rel="noopener noreferrer" style="font-family:var(--mono); font-size:11.5px; color:var(--blue); text-decoration:none; padding:3px 8px; border:1px solid rgba(111,168,255,0.25); border-radius:4px; background:rgba(111,168,255,0.06);">
+                <a href="${item.url}" target="_blank" rel="noopener noreferrer" onclick="playClickBeep()" style="font-family:var(--mono); font-size:11.5px; color:var(--blue); text-decoration:none; padding:4px 10px; border:1px solid rgba(111,168,255,0.3); border-radius:6px; background:rgba(111,168,255,0.08); transition:all 0.15s;">
                   ↗ Open LeetCode
                 </a>
               </div>
             </div>
 
             <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
-              <div style="font-family:var(--mono); font-size:11.5px; color:var(--violet);">
+              <div style="font-family:var(--mono); font-size:12px; color:var(--violet); display:flex; align-items:center; gap:6px;">
+                <span style="display:inline-block; width:4px; height:4px; border-radius:50%; background:var(--violet);"></span>
                 ${item.pattern} ${item.reason ? '<span style="color:var(--dim);">· Why missed: ' + item.reason + '</span>' : ''}
               </div>
-              <div style="display:flex; gap:6px;">
-                <button class="auth-btn" style="padding:4px 10px; font-size:11px; ${isCompleted ? 'background:#7fd9ab;' : ''}" onclick="quickLogFromDeck('${item.title.replace(/'/g, "\\'")}', '${item.pattern}', '${item.difficulty}', 'neetcode')">
+              <div style="display:flex; gap:8px;">
+                <button class="auth-btn" style="padding:5px 12px; font-size:11px; ${isCompleted ? 'background:var(--green); color:#08070d; box-shadow:0 0 10px rgba(127,217,171,0.4);' : ''}" onclick="quickLogFromDeck('${item.title.replace(/'/g, "\\'")}', '${item.pattern}', '${item.difficulty}', 'neetcode'); playSolveChime();">
                   ${isCompleted ? '✓ Solved' : '1-Click Solve'}
                 </button>
-                <button class="auth-btn secondary" style="padding:4px 8px; font-size:11px;" onclick="quickFailFromDeck('${item.title.replace(/'/g, "\\'")}', '${item.pattern}')">
+                <button class="auth-btn secondary" style="padding:5px 10px; font-size:11px;" onclick="quickFailFromDeck('${item.title.replace(/'/g, "\\'")}', '${item.pattern}'); playClickBeep();">
                   Fail / Revisit
                 </button>
               </div>
@@ -1595,6 +1723,8 @@
     }
 
     function renderAll() {
+      updateHUDStats();
+      renderRadarChart();
       renderDailyMission();
       renderSheetReferences();
       renderCurriculumExplorer();
@@ -1787,6 +1917,214 @@
         showToast("Supabase connected!");
       }
     }
-  </script>
+  
+    // =========================================================================
+    // CYBERNETIC QUANT HUD, AUDIO SYNTH, AND AMBIENT CANVAS GRAPH
+    // =========================================================================
+    
+    // --- 1. Audio FX Synthesizer (Web Audio API) ---
+    let audioFxEnabled = true;
+    let audioCtx = null;
+
+    function toggleAudioFx() {
+      audioFxEnabled = !audioFxEnabled;
+      const el = document.getElementById('hud-audio-val');
+      if (el) {
+        el.innerText = audioFxEnabled ? "ON" : "OFF";
+        el.style.color = audioFxEnabled ? "var(--green)" : "var(--dim)";
+      }
+      showToast(audioFxEnabled ? "Synthesizer feedback enabled." : "Audio muted.");
+    }
+
+    function playTone(freq = 440, type = 'sine', duration = 0.08) {
+      if (!audioFxEnabled) return;
+      try {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.04, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + duration);
+      } catch(e) {}
+    }
+
+    function playSolveChime() {
+      playTone(523.25, 'sine', 0.1); // C5
+      setTimeout(() => playTone(659.25, 'sine', 0.1), 80); // E5
+      setTimeout(() => playTone(783.99, 'sine', 0.15), 160); // G5
+      setTimeout(() => playTone(1046.50, 'triangle', 0.25), 240); // C6
+    }
+
+    function playClickBeep() {
+      playTone(880, 'sine', 0.04);
+    }
+
+    // --- 2. XP & Rank Engine ---
+    function computeXPAndRank() {
+      if (!localData || !localData.problems) return { xp: 0, rank: "LVL 1 · RECURSION CADET", nextXP: 100 };
+      let xp = 0;
+      localData.problems.forEach(p => {
+        if (p.difficulty === 'Hard') xp += 50;
+        else if (p.difficulty === 'Medium') xp += 25;
+        else xp += 10;
+      });
+
+      let rank = "LVL 1 · RECURSION CADET";
+      if (xp >= 1800) rank = "LVL 5 · PRINCIPAL QUANT ARCHITECT";
+      else if (xp >= 800) rank = "LVL 4 · HFT SYSTEMS OPERATOR";
+      else if (xp >= 300) rank = "LVL 3 · SYSTEMS SPECIALIST";
+      else if (xp >= 100) rank = "LVL 2 · ALGORITHMIC INITIATE";
+
+      return { xp, rank };
+    }
+
+    function updateHUDStats() {
+      const { xp, rank } = computeXPAndRank();
+      const rankEl = document.getElementById('hud-rank-val');
+      const xpEl = document.getElementById('hud-xp-val');
+      const latencyEl = document.getElementById('hud-latency-val');
+      if (rankEl) rankEl.innerText = rank;
+      if (xpEl) xpEl.innerText = `${xp} XP`;
+      if (latencyEl) {
+        const fakeLat = (0.15 + Math.random() * 0.12).toFixed(2);
+        latencyEl.innerText = `${fakeLat}ms`;
+      }
+    }
+
+    // --- 3. Interactive SVG Radar Chart ---
+    function renderRadarChart() {
+      const svg = document.getElementById('pattern-radar-svg');
+      if (!svg || typeof CURATED_PROBLEMS === 'undefined') return;
+
+      const solvedNames = new Set(localData.problems.map(p => p.name.toLowerCase()));
+      const categories = [
+        "Arrays & Hashing", "Two Pointers", "Sliding Window", "Stack",
+        "Binary Search", "Linked List", "Trees", "Tries",
+        "Heap / Priority Queue", "Backtracking", "Graphs", "Advanced Graphs",
+        "1-D Dynamic Programming", "2-D Dynamic Programming", "Greedy",
+        "Intervals", "Math & Geometry", "Bit Manipulation"
+      ];
+
+      const cx = 170, cy = 170, radius = 110;
+      const totalAxes = categories.length;
+      let gridLines = '';
+      let labels = '';
+      let dataPoints = [];
+
+      // Concentric rings (25%, 50%, 75%, 100%)
+      [0.25, 0.5, 0.75, 1.0].forEach(level => {
+        let ringPoints = [];
+        for (let i = 0; i < totalAxes; i++) {
+          const angle = (Math.PI * 2 / totalAxes) * i - Math.PI / 2;
+          const x = cx + radius * level * Math.cos(angle);
+          const y = cy + radius * level * Math.sin(angle);
+          ringPoints.push(`${x.toFixed(1)},${y.toFixed(1)}`);
+        }
+        gridLines += `<polygon points="${ringPoints.join(' ')}" fill="none" stroke="rgba(169,150,255,${level === 1 ? 0.25 : 0.1})" stroke-width="1"/>`;
+      });
+
+      // Spoke axes & Data Polygon
+      categories.forEach((cat, i) => {
+        const angle = (Math.PI * 2 / totalAxes) * i - Math.PI / 2;
+        const x = cx + radius * Math.cos(angle);
+        const y = cy + radius * Math.sin(angle);
+        gridLines += `<line x1="${cx}" y1="${cy}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}" stroke="rgba(169,150,255,0.12)" stroke-width="1"/>`;
+
+        // Calculate solved ratio
+        const catProbs = CURATED_PROBLEMS.filter(p => p.pattern === cat);
+        const catSolved = catProbs.filter(p => solvedNames.has(p.title.toLowerCase())).length;
+        const ratio = catProbs.length > 0 ? (catSolved / catProbs.length) : 0;
+        const effectiveRatio = Math.max(0.08, Math.min(1.0, ratio)); // Min visibility floor
+
+        const dx = cx + radius * effectiveRatio * Math.cos(angle);
+        const dy = cy + radius * effectiveRatio * Math.sin(angle);
+        dataPoints.push(`${dx.toFixed(1)},${dy.toFixed(1)}`);
+
+        // Outer label abbreviation
+        const lx = cx + (radius + 20) * Math.cos(angle);
+        const ly = cy + (radius + 20) * Math.sin(angle);
+        const shortName = cat.length > 10 ? cat.slice(0, 8) + '..' : cat;
+        labels += `<text x="${lx.toFixed(1)}" y="${ly.toFixed(1)}" font-family="JetBrains Mono" font-size="8" fill="rgba(166,160,189,0.75)" text-anchor="middle" dominant-baseline="middle">${shortName}</text>`;
+      });
+
+      svg.innerHTML = `
+        <defs>
+          <radialGradient id="radar-glow" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="rgba(169,150,255,0.35)"/>
+            <stop offset="100%" stop-color="rgba(111,168,255,0.05)"/>
+          </radialGradient>
+        </defs>
+        ${gridLines}
+        <polygon points="${dataPoints.join(' ')}" fill="url(#radar-glow)" stroke="var(--violet)" stroke-width="2" filter="drop-shadow(0 0 6px rgba(169,150,255,0.6))"/>
+        ${dataPoints.map(pt => `<circle cx="${pt.split(',')[0]}" cy="${pt.split(',')[1]}" r="3" fill="var(--green)" filter="drop-shadow(0 0 4px var(--green))"/>`).join('')}
+        ${labels}
+      `;
+    }
+
+    // --- 4. Ambient Mathematical Constellation Canvas ---
+    (function initConstellationCanvas() {
+      const canvas = document.getElementById('bg-canvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      let width, height;
+      let particles = [];
+      const particleCount = 42;
+
+      function resize() {
+        width = canvas.width = window.innerWidth;
+        height = canvas.height = window.innerHeight;
+      }
+      window.addEventListener('resize', resize);
+      resize();
+
+      for (let i = 0; i < particleCount; i++) {
+        particles.push({
+          x: Math.random() * width,
+          y: Math.random() * height,
+          vx: (Math.random() - 0.5) * 0.35,
+          vy: (Math.random() - 0.5) * 0.35,
+          radius: Math.random() * 1.5 + 0.8
+        });
+      }
+
+      function draw() {
+        ctx.clearRect(0, 0, width, height);
+        ctx.fillStyle = 'rgba(169, 150, 255, 0.4)';
+        ctx.strokeStyle = 'rgba(169, 150, 255, 0.08)';
+
+        for (let i = 0; i < particles.length; i++) {
+          const p = particles[i];
+          p.x += p.vx;
+          p.y += p.vy;
+          if (p.x < 0 || p.x > width) p.vx *= -1;
+          if (p.y < 0 || p.y > height) p.vy *= -1;
+
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+          ctx.fill();
+
+          for (let j = i + 1; j < particles.length; j++) {
+            const p2 = particles[j];
+            const dist = Math.hypot(p.x - p2.x, p.y - p2.y);
+            if (dist < 130) {
+              ctx.beginPath();
+              ctx.moveTo(p.x, p.y);
+              ctx.lineTo(p2.x, p2.y);
+              ctx.stroke();
+            }
+          }
+        }
+        requestAnimationFrame(draw);
+      }
+      draw();
+    })();
+
+</script>
 </body>
 </html>
