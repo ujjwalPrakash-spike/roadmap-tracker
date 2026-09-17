@@ -8,10 +8,12 @@ Usage:
   woolf solve <1|2|3>               1-click solve a mission slot
   woolf solve "Title" [Diff] [Cat]  Log any custom solved problem
   woolf fail <1|2|3> "Why missed"   Log a failure to spaced repetition bank
+  woolf projects                    View 4 Systems & Quant Capstone Projects
+  woolf projects toggle <p> <m>     Toggle project milestone done/pending
   woolf patterns                    Show ASCII mastery bars across all 18 patterns
   woolf search <query>              Search 327 curated NeetCode & Google problems
   woolf history                     View recent submissions
-  woolf sync                        Sync with Supabase cloud backup
+  woolf theme <name>                Switch CLI theme (obsidian|emerald|sapphire|sunset)
 ==============================================================================
 """
 
@@ -20,19 +22,77 @@ from datetime import datetime, date
 
 CONFIG_DIR = os.path.expanduser("~/.config/woolf")
 DATA_FILE = os.path.join(CONFIG_DIR, "data.json")
+THEME_FILE = os.path.join(CONFIG_DIR, "theme.txt")
 DATASET_JS_PATH = os.path.expanduser("~/roadmap-tracker/problems_dataset.js")
 
-# ANSI Color formatting
 C_RESET = "\033[0m"
 C_BOLD = "\033[1m"
 C_DIM = "\033[2m"
-C_GREEN = "\033[38;2;16;185;129m"
-C_BLUE = "\033[38;2;56;189;248m"
-C_INDIGO = "\033[38;2;99;102;241m"
-C_VIOLET = "\033[38;2;129;140;248m"
-C_AMBER = "\033[38;2;245;158;11m"
-C_ROSE = "\033[38;2;244;63;94m"
-C_MUTED = "\033[38;2;148;163;184m"
+
+THEMES = {
+    "obsidian": {
+        "primary": "\033[38;2;169;150;255m",   # Violet
+        "secondary": "\033[38;2;111;168;255m", # Blue
+        "accent": "\033[38;2;129;140;248m",    # Indigo
+        "green": "\033[38;2;127;217;171m",     # Mint
+        "amber": "\033[38;2;255;154;99m",      # Coral Amber
+        "rose": "\033[38;2;244;63;94m",        # Rose
+        "muted": "\033[38;2;166;160;189m",
+    },
+    "emerald": {
+        "primary": "\033[38;2;16;185;129m",    # Jade Emerald
+        "secondary": "\033[38;2;52;211;153m",  # Mint
+        "accent": "\033[38;2;74;222;128m",     # Green
+        "green": "\033[38;2;34;197;94m",
+        "amber": "\033[38;2;251;191;36m",
+        "rose": "\033[38;2;244;63;94m",
+        "muted": "\033[38;2;134;239;172m",
+    },
+    "sapphire": {
+        "primary": "\033[38;2;56;189;248m",    # Sky Blue
+        "secondary": "\033[38;2;96;165;250m",  # Cobalt
+        "accent": "\033[38;2;34;211;238m",     # Cyan
+        "green": "\033[38;2;52;211;153m",
+        "amber": "\033[38;2;251;191;36m",
+        "rose": "\033[38;2;244;63;94m",
+        "muted": "\033[38;2;147;197;253m",
+    },
+    "sunset": {
+        "primary": "\033[38;2;245;158;11m",    # Warm Gold Amber
+        "secondary": "\033[38;2;251;146;60m",  # Flame Orange
+        "accent": "\033[38;2;253;230;138m",    # Light Gold
+        "green": "\033[38;2;16;185;129m",
+        "amber": "\033[38;2;245;158;11m",
+        "rose": "\033[38;2;244;63;94m",
+        "muted": "\033[38;2;253;230;138m",
+    }
+}
+
+def get_current_theme():
+    if os.path.exists(THEME_FILE):
+        try:
+            with open(THEME_FILE, "r") as f:
+                t = f.read().strip().lower()
+                if t in THEMES:
+                    return t
+        except Exception:
+            pass
+    return "obsidian"
+
+def set_theme(theme_name):
+    t = theme_name.lower()
+    if t not in THEMES:
+        print(f"Unknown theme '{theme_name}'. Available: " + ", ".join(THEMES.keys()))
+        return
+    os.makedirs(CONFIG_DIR, exist_ok=True)
+    with open(THEME_FILE, "w") as f:
+        f.write(t)
+    pal = THEMES[t]
+    print(f"\nSwitched CLI Theme to {C_BOLD}{t.upper()}{C_RESET} {pal['primary']}■ {pal['secondary']}■ {pal['green']}■ {pal['amber']}■{C_RESET}\n")
+
+def get_colors():
+    t_name = get_current_theme()
+    return THEMES.get(t_name, THEMES["obsidian"])
 
 def init_storage():
     os.makedirs(CONFIG_DIR, exist_ok=True)
@@ -79,16 +139,16 @@ def load_dataset():
         })
     return problems
 
-def get_rank(xp):
+def get_rank_and_progress(xp):
     if xp >= 1800:
-        return "Level 5 · Systems Architect"
+        return "Level 5 · Systems Architect", 1800, 3000
     elif xp >= 800:
-        return "Level 4 · Quant & DSA Specialist"
+        return "Level 4 · Quant & DSA Specialist", 800, 1800
     elif xp >= 300:
-        return "Level 3 · Interview Ready"
+        return "Level 3 · Interview Ready", 300, 800
     elif xp >= 100:
-        return "Level 2 · Algorithms Builder"
-    return "Level 1 · Pattern Explorer"
+        return "Level 2 · Algorithms Builder", 100, 300
+    return "Level 1 · Pattern Explorer", 0, 100
 
 def calculate_xp(problems):
     xp = 0
@@ -148,178 +208,13 @@ def get_daily_deck(curated, data):
         deck.append(unsolved[2])
     return deck
 
-def format_diff(diff):
+def format_diff(diff, C):
     if diff == "Easy":
-        return f"{C_GREEN}[EASY]{C_RESET}"
+        return f"{C['green']}[EASY]{C_RESET}"
     elif diff == "Medium":
-        return f"{C_AMBER}[MED]{C_RESET} "
+        return f"{C['amber']}[MED]{C_RESET} "
     else:
-        return f"{C_ROSE}[HARD]{C_RESET}"
-
-def cmd_status():
-    data = load_data()
-    curated = load_dataset()
-    deck = get_daily_deck(curated, data)
-    
-    today_str = date.today().isoformat()
-    today_solved = [p for p in data.get("problems", []) if p.get("logged_at", "").startswith(today_str)]
-    streak = calculate_streak(data.get("problems", []))
-    xp = calculate_xp(data.get("problems", []))
-    rank = get_rank(xp)
-    total_solved = len(data.get("problems", []))
-
-    print(f"\n{C_INDIGO}{C_BOLD}━  WOOLF SYSTEMS & QUANT ENGINE // STUDY TERMINAL  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━{C_RESET}\n")
-    print(f"  {C_MUTED}Rank:{C_RESET}   {C_VIOLET}{C_BOLD}{rank}{C_RESET}    {C_MUTED}Streak:{C_RESET} {C_AMBER}{C_BOLD}{streak} Days 🔥{C_RESET}")
-    print(f"  {C_MUTED}XP:{C_RESET}     {C_BLUE}{C_BOLD}{xp} XP{C_RESET}                      {C_MUTED}Today:{C_RESET}  {C_GREEN}{C_BOLD}[{len(today_solved)}/3 Solved]{C_RESET}    {C_MUTED}Bank:{C_RESET} {total_solved}/{len(curated)} Solved\n")
-    
-    print(f"{C_INDIGO}{C_BOLD}─  TODAY'S 3-PROBLEM MISSION  ──────────────────────────────────────────────────{C_RESET}\n")
-    for idx, item in enumerate(deck, 1):
-        is_rev = item.get("is_review", False)
-        tag = f"{C_AMBER}SPACED REVIEW{C_RESET}" if is_rev else f"{C_VIOLET}CURRICULUM{C_RESET}"
-        diff_badge = format_diff(item.get("difficulty", "Medium"))
-        is_done = any(p.get("name", "").lower() == item["title"].lower() and p.get("logged_at", "").startswith(today_str) for p in data.get("problems", []))
-        check = f"{C_GREEN}[✓ SOLVED]{C_RESET}" if is_done else f"{C_DIM}[PENDING]{C_RESET}"
-
-        print(f"  [{C_BOLD}{idx}{C_RESET}] {C_BOLD}{item['title']}{C_RESET}  {diff_badge}  {check}")
-        print(f"      {C_DIM}Pattern:{C_RESET} {item['pattern']}  ·  {C_DIM}Track:{C_RESET} {tag}")
-        print(f"      {C_BLUE}↳ {item['url']}{C_RESET}\n")
-
-    print(f"{C_INDIGO}{C_BOLD}─  QUICK COMMANDS  ─────────────────────────────────────────────────────────────{C_RESET}")
-    print(f"  {C_BOLD}woolf solve <1|2|3>{C_RESET}           {C_MUTED}1-Click solve today's mission slot (e.g. woolf solve 1){C_RESET}")
-    print(f"  {C_BOLD}woolf solve \"Title\" [Diff]{C_RESET}   {C_MUTED}Log custom problem (e.g. woolf solve \"LRU Cache\" Med){C_RESET}")
-    print(f"  {C_BOLD}woolf fail <1|2|3> \"Reason\"{C_RESET}  {C_MUTED}Save to Sunday spaced repetition review bank{C_RESET}")
-    print(f"  {C_BOLD}woolf projects{C_RESET}             {C_MUTED}View 4 Systems & Quant Capstone Projects progress{C_RESET}")
-    print(f"  {C_BOLD}woolf projects toggle 1 1{C_RESET}  {C_MUTED}Check/uncheck milestone #1 on Project #1{C_RESET}")
-    print(f"  {C_BOLD}woolf patterns{C_RESET}             {C_MUTED}View 18-pattern mastery progress bars{C_RESET}")
-    print(f"  {C_BOLD}woolf search <query>{C_RESET}       {C_MUTED}Search 327 NeetCode & Google interview problems{C_RESET}")
-    print(f"  {C_BOLD}woolf history{C_RESET}              {C_MUTED}View your recently solved submissions log{C_RESET}")
-    print(f"{C_INDIGO}{C_BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━{C_RESET}\n")
-
-def cmd_solve(args):
-    if not args:
-        print(f"{C_ROSE}Usage:{C_RESET} woolf solve <1|2|3>  OR  woolf solve \"Problem Name\" [Easy|Medium|Hard] [Pattern] [Mins]")
-        return
-    data = load_data()
-    curated = load_dataset()
-    deck = get_daily_deck(curated, data)
-    
-    # Check if solving slot number
-    if args[0] in ["1", "2", "3"]:
-        slot_idx = int(args[0]) - 1
-        if slot_idx >= len(deck):
-            print(f"{C_ROSE}Invalid slot number {args[0]}.{C_RESET}")
-            return
-        target = deck[slot_idx]
-        name = target["title"]
-        pattern = target["pattern"]
-        diff = target.get("difficulty", "Medium")
-        mins = int(args[1]) if len(args) > 1 and args[1].isdigit() else 25
-    else:
-        name = args[0]
-        diff = args[1] if len(args) > 1 else "Medium"
-        pattern = args[2] if len(args) > 2 else "Arrays & Hashing"
-        mins = int(args[3]) if len(args) > 3 and args[3].isdigit() else 25
-
-    now_iso = datetime.utcnow().isoformat() + "Z"
-    new_entry = {
-        "id": "cli-" + str(int(time.time())),
-        "name": name,
-        "pattern": pattern,
-        "difficulty": diff,
-        "time_spent": mins,
-        "logged_at": now_iso,
-        "source": "cli"
-    }
-    data["problems"].insert(0, new_entry)
-    
-    # If this was in failures, remove it
-    data["failures"] = [f for f in data.get("failures", []) if f.get("problem_name", "").lower() != name.lower()]
-    
-    save_data(data)
-    xp_gain = 50 if diff == "Hard" else (25 if diff == "Medium" else 10)
-    print(f"\n{C_GREEN}✓ Logged successfully!{C_RESET} {C_BOLD}{name}{C_RESET} ({diff}) · {pattern}")
-    print(f"{C_BLUE}+{xp_gain} XP awarded!{C_RESET} Total XP: {C_BOLD}{calculate_xp(data['problems'])}{C_RESET}\n")
-
-def cmd_fail(args):
-    if not args:
-        print(f"{C_ROSE}Usage:{C_RESET} woolf fail <1|2|3> \"Reason for missing\"  OR  woolf fail \"Problem Name\" \"Reason\"")
-        return
-    data = load_data()
-    curated = load_dataset()
-    deck = get_daily_deck(curated, data)
-
-    if args[0] in ["1", "2", "3"]:
-        slot_idx = int(args[0]) - 1
-        if slot_idx >= len(deck):
-            print(f"{C_ROSE}Invalid slot number.{C_RESET}")
-            return
-        name = deck[slot_idx]["title"]
-        pattern = deck[slot_idx]["pattern"]
-        reason = args[1] if len(args) > 1 else "Needs review"
-    else:
-        name = args[0]
-        reason = args[1] if len(args) > 1 else "Needs review"
-        pattern = "Algorithm Revision"
-
-    new_fail = {
-        "id": "fail-" + str(int(time.time())),
-        "problem_name": name,
-        "pattern": pattern,
-        "reason": reason,
-        "logged_at": datetime.utcnow().isoformat() + "Z"
-    }
-    data["failures"].insert(0, new_fail)
-    save_data(data)
-    print(f"\n{C_AMBER}⚠ Saved to Spaced Repetition Bank:{C_RESET} {C_BOLD}{name}{C_RESET}")
-    print(f"{C_MUTED}Reason:{C_RESET} {reason}\n")
-
-def cmd_patterns():
-    data = load_data()
-    curated = load_dataset()
-    solved_names = set(p.get("name", "").lower() for p in data.get("problems", []))
-
-    categories = [
-        "Arrays & Hashing", "Two Pointers", "Sliding Window", "Stack",
-        "Binary Search", "Linked List", "Trees", "Tries",
-        "Heap / Priority Queue", "Backtracking", "Graphs", "Advanced Graphs",
-        "1-D Dynamic Programming", "2-D Dynamic Programming", "Greedy",
-        "Intervals", "Math & Geometry", "Bit Manipulation"
-    ]
-
-    print(f"\n{C_INDIGO}{C_BOLD}=== 18-PATTERN MASTERY BREAKDOWN ==={C_RESET}\n")
-    for cat in categories:
-        cat_probs = [p for p in curated if p["pattern"] == cat]
-        total = len(cat_probs)
-        solved = len([p for p in cat_probs if p["title"].lower() in solved_names])
-        pct = int((solved / total) * 100) if total > 0 else 0
-        
-        # ASCII progress bar
-        bar_len = 16
-        filled = int((pct / 100) * bar_len)
-        bar = f"{C_GREEN}{'█' * filled}{C_DIM}{'░' * (bar_len - filled)}{C_RESET}"
-        
-        print(f"  {cat:<24} [{bar}] {pct:>3}%  {C_MUTED}({solved}/{total}){C_RESET}")
-    print()
-
-def cmd_search(query):
-    if not query:
-        print(f"{C_ROSE}Usage:{C_RESET} woolf search <keyword>")
-        return
-    curated = load_dataset()
-    data = load_data()
-    solved_names = set(p.get("name", "").lower() for p in data.get("problems", []))
-
-    matches = [p for p in curated if query.lower() in p["title"].lower() or query.lower() in p["pattern"].lower()]
-    print(f"\n{C_BOLD}Found {len(matches)} matching problem(s):{C_RESET}\n")
-    for p in matches[:15]:
-        done = f"{C_GREEN}[SOLVED]{C_RESET}" if p["title"].lower() in solved_names else f"{C_DIM}[UNSOLVED]{C_RESET}"
-        diff = format_diff(p["difficulty"])
-        print(f"  {p['order']:>3}. {C_BOLD}{p['title']:<36}{C_RESET} {diff} {done}")
-        print(f"       {C_MUTED}Pattern:{C_RESET} {p['pattern']:<20} {C_BLUE}↳ {p['url']}{C_RESET}")
-    if len(matches) > 15:
-        print(f"  {C_DIM}... and {len(matches) - 15} more{C_RESET}")
-    print()
-
+        return f"{C['rose']}[HARD]{C_RESET}"
 
 DEFAULT_PROJECTS = [
     {
@@ -377,7 +272,132 @@ def get_projects(data):
         save_data(data)
     return data["projects"]
 
+def cmd_status():
+    C = get_colors()
+    data = load_data()
+    curated = load_dataset()
+    deck = get_daily_deck(curated, data)
+    
+    today_str = date.today().isoformat()
+    today_solved = [p for p in data.get("problems", []) if p.get("logged_at", "").startswith(today_str)]
+    streak = calculate_streak(data.get("problems", []))
+    xp = calculate_xp(data.get("problems", []))
+    rank, floor_xp, target_xp = get_rank_and_progress(xp)
+    total_solved = len(data.get("problems", []))
+
+    # Level progress bar
+    level_range = target_xp - floor_xp
+    progress_pct = max(0, min(100, int(((xp - floor_xp) / level_range) * 100)))
+    bar_len = 12
+    filled_len = int((progress_pct / 100) * bar_len)
+    lvl_bar = f"{C['primary']}{'█' * filled_len}{C_DIM}{'░' * (bar_len - filled_len)}{C_RESET}"
+
+    print(f"\n{C['primary']}{C_BOLD}━  WOOLF SYSTEMS & QUANT ENGINE // STUDY TERMINAL  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━{C_RESET}\n")
+    print(f"  {C['muted']}Level:{C_RESET}   {C['primary']}{C_BOLD}{rank}{C_RESET}  [{lvl_bar}] {progress_pct}% {C_DIM}({xp}/{target_xp} XP){C_RESET}")
+    print(f"  {C['muted']}Stats:{C_RESET}   {C['amber']}{C_BOLD}{streak} Days 🔥 Streak{C_RESET}    {C['secondary']}{C_BOLD}[{len(today_solved)}/3 Solved Today]{C_RESET}    {C['muted']}Bank:{C_RESET} {total_solved}/{len(curated)} Solved\n")
+    
+    print(f"{C['primary']}{C_BOLD}─  TODAY'S 3-PROBLEM MISSION  ──────────────────────────────────────────────────{C_RESET}\n")
+    for idx, item in enumerate(deck, 1):
+        is_rev = item.get("is_review", False)
+        tag = f"{C['amber']}SPACED REVIEW{C_RESET}" if is_rev else f"{C['accent']}CURRICULUM{C_RESET}"
+        diff_badge = format_diff(item.get("difficulty", "Medium"), C)
+        is_done = any(p.get("name", "").lower() == item["title"].lower() and p.get("logged_at", "").startswith(today_str) for p in data.get("problems", []))
+        check = f"{C['green']}[✓ SOLVED]{C_RESET}" if is_done else f"{C_DIM}[PENDING]{C_RESET}"
+
+        print(f"  [{C_BOLD}{idx}{C_RESET}] {C_BOLD}{item['title']}{C_RESET}  {diff_badge}  {check}")
+        print(f"      {C_DIM}Pattern:{C_RESET} {item['pattern']}  ·  {C_DIM}Track:{C_RESET} {tag}")
+        print(f"      {C['secondary']}↳ {item['url']}{C_RESET}\n")
+
+    print(f"{C['primary']}{C_BOLD}─  QUICK COMMANDS  ─────────────────────────────────────────────────────────────{C_RESET}")
+    print(f"  {C_BOLD}woolf solve <1|2|3>{C_RESET}           {C_DIM}1-Click solve today's mission slot (e.g. woolf solve 1){C_RESET}")
+    print(f"  {C_BOLD}woolf solve \"Title\" [Diff]{C_RESET}   {C_DIM}Log custom problem (e.g. woolf solve \"LRU Cache\" Med){C_RESET}")
+    print(f"  {C_BOLD}woolf fail <1|2|3> \"Reason\"{C_RESET}  {C_DIM}Save to Sunday spaced repetition review bank{C_RESET}")
+    print(f"  {C_BOLD}woolf projects{C_RESET}             {C_DIM}View 4 Systems & Quant Capstone Projects progress{C_RESET}")
+    print(f"  {C_BOLD}woolf projects toggle 1 1{C_RESET}  {C_DIM}Check/uncheck milestone #1 on Project #1{C_RESET}")
+    print(f"  {C_BOLD}woolf patterns{C_RESET}             {C_DIM}View 18-pattern mastery progress bars{C_RESET}")
+    print(f"  {C_BOLD}woolf search <query>{C_RESET}       {C_DIM}Search 327 NeetCode & Google interview problems{C_RESET}")
+    print(f"  {C_BOLD}woolf theme <name>{C_RESET}         {C_DIM}Change theme: obsidian | emerald | sapphire | sunset{C_RESET}")
+    print(f"{C['primary']}{C_BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━{C_RESET}\n")
+
+def cmd_solve(args):
+    C = get_colors()
+    if not args:
+        print(f"{C['rose']}Usage:{C_RESET} woolf solve <1|2|3>  OR  woolf solve \"Problem Name\" [Easy|Medium|Hard] [Pattern] [Mins]")
+        return
+    data = load_data()
+    curated = load_dataset()
+    deck = get_daily_deck(curated, data)
+    
+    if args[0] in ["1", "2", "3"]:
+        slot_idx = int(args[0]) - 1
+        if slot_idx >= len(deck):
+            print(f"{C['rose']}Invalid slot number {args[0]}.{C_RESET}")
+            return
+        target = deck[slot_idx]
+        name = target["title"]
+        pattern = target["pattern"]
+        diff = target.get("difficulty", "Medium")
+        mins = int(args[1]) if len(args) > 1 and args[1].isdigit() else 25
+    else:
+        name = args[0]
+        diff = args[1] if len(args) > 1 else "Medium"
+        pattern = args[2] if len(args) > 2 else "Arrays & Hashing"
+        mins = int(args[3]) if len(args) > 3 and args[3].isdigit() else 25
+
+    now_iso = datetime.utcnow().isoformat() + "Z"
+    new_entry = {
+        "id": "cli-" + str(int(time.time())),
+        "name": name,
+        "pattern": pattern,
+        "difficulty": diff,
+        "time_spent": mins,
+        "logged_at": now_iso,
+        "source": "cli"
+    }
+    data["problems"].insert(0, new_entry)
+    data["failures"] = [f for f in data.get("failures", []) if f.get("problem_name", "").lower() != name.lower()]
+    save_data(data)
+
+    xp_gain = 50 if diff == "Hard" else (25 if diff == "Medium" else 10)
+    print(f"\n{C['green']}✓ Logged successfully!{C_RESET} {C_BOLD}{name}{C_RESET} ({diff}) · {pattern}")
+    print(f"{C['secondary']}+{xp_gain} XP awarded!{C_RESET} Total XP: {C_BOLD}{calculate_xp(data['problems'])}{C_RESET}\n")
+
+def cmd_fail(args):
+    C = get_colors()
+    if not args:
+        print(f"{C['rose']}Usage:{C_RESET} woolf fail <1|2|3> \"Reason for missing\"  OR  woolf fail \"Problem Name\" \"Reason\"")
+        return
+    data = load_data()
+    curated = load_dataset()
+    deck = get_daily_deck(curated, data)
+
+    if args[0] in ["1", "2", "3"]:
+        slot_idx = int(args[0]) - 1
+        if slot_idx >= len(deck):
+            print(f"{C['rose']}Invalid slot number.{C_RESET}")
+            return
+        name = deck[slot_idx]["title"]
+        pattern = deck[slot_idx]["pattern"]
+        reason = args[1] if len(args) > 1 else "Needs review"
+    else:
+        name = args[0]
+        reason = args[1] if len(args) > 1 else "Needs review"
+        pattern = "Algorithm Revision"
+
+    new_fail = {
+        "id": "fail-" + str(int(time.time())),
+        "problem_name": name,
+        "pattern": pattern,
+        "reason": reason,
+        "logged_at": datetime.utcnow().isoformat() + "Z"
+    }
+    data["failures"].insert(0, new_fail)
+    save_data(data)
+    print(f"\n{C['amber']}⚠ Saved to Spaced Repetition Bank:{C_RESET} {C_BOLD}{name}{C_RESET}")
+    print(f"{C['muted']}Reason:{C_RESET} {reason}\n")
+
 def cmd_projects(args):
+    C = get_colors()
     data = load_data()
     projects = get_projects(data)
 
@@ -391,15 +411,15 @@ def cmd_projects(args):
                         p["stages"][s_idx]["done"] = not p["stages"][s_idx]["done"]
                         status = "COMPLETED" if p["stages"][s_idx]["done"] else "PENDING"
                         save_data(data)
-                        print(f"\n{C_GREEN}✓ Updated Project {p_num} Milestone #{s_idx + 1}:{C_RESET} {p['stages'][s_idx]['label']} -> {C_BOLD}{status}{C_RESET}\n")
+                        print(f"\n{C['green']}✓ Updated Project {p_num} Milestone #{s_idx + 1}:{C_RESET} {p['stages'][s_idx]['label']} -> {C_BOLD}{status}{C_RESET}\n")
                         return
-            print(f"{C_ROSE}Invalid project or milestone index.{C_RESET}")
+            print(f"{C['rose']}Invalid project or milestone index.{C_RESET}")
         except ValueError:
-            print(f"{C_ROSE}Usage: woolf projects toggle <project_num: 1-4> <milestone_num: 1-5>{C_RESET}")
+            print(f"{C['rose']}Usage: woolf projects toggle <project_num: 1-4> <milestone_num: 1-5>{C_RESET}")
         return
 
-    print(f"\n{C_INDIGO}{C_BOLD}=== 4 SYSTEMS & QUANT CAPSTONE PROJECTS ==={C_RESET}")
-    print(f"{C_MUTED}Kernel → Network → Persistent Storage → Hot Path HFT Engine{C_RESET}\n")
+    print(f"\n{C['primary']}{C_BOLD}=== 4 SYSTEMS & QUANT CAPSTONE PROJECTS ==={C_RESET}")
+    print(f"{C['muted']}Kernel → Network → Persistent Storage → Hot Path HFT Engine{C_RESET}\n")
 
     for p in projects:
         done_cnt = sum(1 for s in p["stages"] if s.get("done", False))
@@ -407,19 +427,68 @@ def cmd_projects(args):
         pct = int((done_cnt / total_cnt) * 100) if total_cnt > 0 else 0
         bar_len = 10
         filled = int((pct / 100) * bar_len)
-        bar = f"{C_GREEN}{'■' * filled}{C_DIM}{'□' * (bar_len - filled)}{C_RESET}"
+        bar = f"{C['green']}{'■' * filled}{C_DIM}{'□' * (bar_len - filled)}{C_RESET}"
 
-        print(f"{C_BOLD}{p['name']}{C_RESET}  [{bar}] {pct}%  {C_VIOLET}({p.get('tag', '')}){C_RESET}")
+        print(f"{C_BOLD}{p['name']}{C_RESET}  [{bar}] {pct}%  {C['accent']}({p.get('tag', '')}){C_RESET}")
         for s_idx, s in enumerate(p["stages"], 1):
-            chk = f"{C_GREEN}[✓]{C_RESET}" if s.get("done", False) else f"{C_DIM}[ ]{C_RESET}"
-            lbl = f"{C_BOLD}{s['label']}{C_RESET}" if s.get("done", False) else f"{C_MUTED}{s['label']}{C_RESET}"
+            chk = f"{C['green']}[✓]{C_RESET}" if s.get("done", False) else f"{C_DIM}[ ]{C_RESET}"
+            lbl = f"{C_BOLD}{s['label']}{C_RESET}" if s.get("done", False) else f"{C['muted']}{s['label']}{C_RESET}"
             print(f"   {chk} {C_DIM}#{s_idx}{C_RESET} {lbl}")
         print()
 
     print(f"{C_DIM}To toggle milestone:{C_RESET} {C_BOLD}woolf projects toggle <proj: 1-4> <milestone: 1-5>{C_RESET}")
     print(f"{C_DIM}Example:{C_RESET} {C_BOLD}woolf projects toggle 1 1{C_RESET} (marks Project 1 milestone #1 done)\n")
 
+def cmd_patterns():
+    C = get_colors()
+    data = load_data()
+    curated = load_dataset()
+    solved_names = set(p.get("name", "").lower() for p in data.get("problems", []))
+
+    categories = [
+        "Arrays & Hashing", "Two Pointers", "Sliding Window", "Stack",
+        "Binary Search", "Linked List", "Trees", "Tries",
+        "Heap / Priority Queue", "Backtracking", "Graphs", "Advanced Graphs",
+        "1-D Dynamic Programming", "2-D Dynamic Programming", "Greedy",
+        "Intervals", "Math & Geometry", "Bit Manipulation"
+    ]
+
+    print(f"\n{C['primary']}{C_BOLD}=== 18-PATTERN MASTERY BREAKDOWN ==={C_RESET}\n")
+    for cat in categories:
+        cat_probs = [p for p in curated if p["pattern"] == cat]
+        total = len(cat_probs)
+        solved = len([p for p in cat_probs if p["title"].lower() in solved_names])
+        pct = int((solved / total) * 100) if total > 0 else 0
+        
+        bar_len = 16
+        filled = int((pct / 100) * bar_len)
+        bar = f"{C['green']}{'█' * filled}{C_DIM}{'░' * (bar_len - filled)}{C_RESET}"
+        
+        print(f"  {cat:<24} [{bar}] {pct:>3}%  {C['muted']}({solved}/{total}){C_RESET}")
+    print()
+
+def cmd_search(query):
+    C = get_colors()
+    if not query:
+        print(f"{C['rose']}Usage:{C_RESET} woolf search <keyword>")
+        return
+    curated = load_dataset()
+    data = load_data()
+    solved_names = set(p.get("name", "").lower() for p in data.get("problems", []))
+
+    matches = [p for p in curated if query.lower() in p["title"].lower() or query.lower() in p["pattern"].lower()]
+    print(f"\n{C_BOLD}Found {len(matches)} matching problem(s):{C_RESET}\n")
+    for p in matches[:15]:
+        done = f"{C['green']}[SOLVED]{C_RESET}" if p["title"].lower() in solved_names else f"{C_DIM}[UNSOLVED]{C_RESET}"
+        diff = format_diff(p["difficulty"], C)
+        print(f"  {p['order']:>3}. {C_BOLD}{p['title']:<36}{C_RESET} {diff} {done}")
+        print(f"       {C['muted']}Pattern:{C_RESET} {p['pattern']:<20} {C['secondary']}↳ {p['url']}{C_RESET}")
+    if len(matches) > 15:
+        print(f"  {C_DIM}... and {len(matches) - 15} more{C_RESET}")
+    print()
+
 def cmd_history():
+    C = get_colors()
     data = load_data()
     problems = data.get("problems", [])
     print(f"\n{C_BOLD}Recent Solved History ({len(problems)} total):{C_RESET}\n")
@@ -428,8 +497,8 @@ def cmd_history():
         return
     for p in problems[:10]:
         d_str = p.get("logged_at", "").split("T")[0]
-        diff = format_diff(p.get("difficulty", "Medium"))
-        print(f"  [{d_str}] {C_BOLD}{p.get('name', 'Unknown'):<32}{C_RESET} {diff}  {C_MUTED}{p.get('pattern', '')}{C_RESET}")
+        diff = format_diff(p.get("difficulty", "Medium"), C)
+        print(f"  [{d_str}] {C_BOLD}{p.get('name', 'Unknown'):<32}{C_RESET} {diff}  {C['muted']}{p.get('pattern', '')}{C_RESET}")
     print()
 
 def main():
@@ -440,19 +509,23 @@ def main():
         cmd_solve(args[1:])
     elif args[0] in ["fail", "miss", "revisit"]:
         cmd_fail(args[1:])
+    elif args[0] in ["projects", "project", "proj"]:
+        cmd_projects(args[1:])
     elif args[0] in ["patterns", "matrix", "radar"]:
         cmd_patterns()
     elif args[0] in ["search", "find"]:
         cmd_search(" ".join(args[1:]))
-    elif args[0] in ["projects", "project", "proj"]:
-        cmd_projects(args[1:])
+    elif args[0] in ["theme", "colors", "color"]:
+        if len(args) > 1:
+            set_theme(args[1])
+        else:
+            print("Current theme:", get_current_theme())
+            print("Available themes: obsidian, emerald, sapphire, sunset")
     elif args[0] in ["history", "logs", "recent"]:
-
         cmd_history()
     elif args[0] in ["help", "--help", "-h"]:
         print(__doc__)
     else:
-        # Fallback to search or status
         cmd_search(" ".join(args))
 
 if __name__ == "__main__":
