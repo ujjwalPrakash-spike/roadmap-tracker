@@ -63,39 +63,21 @@
     .hud-tag.blue b { color: var(--blue); text-shadow: 0 0 8px rgba(111,168,255,0.4); }
     .hud-tag.amber b { color: var(--amber); text-shadow: 0 0 8px rgba(255,154,99,0.4); }
 
-    /* Cyber Card Accents */
+    /* Modern Friendly Mission Cards */
     .cyber-mission-card {
       position: relative;
       border: 1px solid var(--border);
-      background: linear-gradient(135deg, rgba(23, 20, 36, 0.92), rgba(16, 14, 24, 0.88));
-      border-radius: 10px;
+      background: linear-gradient(135deg, rgba(30, 41, 59, 0.85), rgba(17, 24, 39, 0.9));
+      border-radius: 12px;
       padding: 16px 18px;
-      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-      backdrop-filter: blur(16px);
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      backdrop-filter: blur(12px);
       overflow: hidden;
-    }
-    .cyber-mission-card::before {
-      content: "⌜";
-      position: absolute;
-      top: 2px; left: 6px;
-      font-family: var(--mono);
-      font-size: 11px;
-      color: var(--border-strong);
-      pointer-events: none;
-    }
-    .cyber-mission-card::after {
-      content: "⌟";
-      position: absolute;
-      bottom: 2px; right: 6px;
-      font-family: var(--mono);
-      font-size: 11px;
-      color: var(--border-strong);
-      pointer-events: none;
     }
     .cyber-mission-card:hover {
       border-color: var(--border-strong);
       transform: translateY(-2px);
-      box-shadow: 0 8px 30px rgba(169,150,255,0.12);
+      box-shadow: 0 8px 25px rgba(99, 102, 241, 0.15);
     }
     .sparkline-live {
       display: inline-block;
@@ -105,20 +87,22 @@
     }
 
     :root {
-      --bg: #07060c;
-      --surface: #100e18;
-      --surface-alt: #171424;
-      --surface-raised: #1f1b30;
-      --border: rgba(169, 150, 255, 0.12);
-      --border-strong: rgba(169, 150, 255, 0.32);
-      --text: #f0edf9;
-      --muted: #a6a0bd;
-      --dim: #706a88;
-      --violet: #a996ff;
-      --violet-glow: rgba(169, 150, 255, 0.25);
-      --blue: #6fa8ff;
-      --amber: #ff9a63;
-      --green: #7fd9ab;
+      --bg: #0b0f19;
+      --surface: #111827;
+      --surface-alt: #1e293b;
+      --surface-raised: #334155;
+      --border: rgba(255, 255, 255, 0.09);
+      --border-strong: rgba(99, 102, 241, 0.35);
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --dim: #64748b;
+      --violet: #818cf8;
+      --violet-glow: rgba(129, 140, 248, 0.25);
+      --indigo: #6366f1;
+      --blue: #38bdf8;
+      --amber: #f59e0b;
+      --green: #10b981;
+      --rose: #f43f5e;
       --serif: 'Instrument Serif', Georgia, serif;
       --mono: 'JetBrains Mono', monospace;
       --sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -126,8 +110,9 @@
     * { box-sizing: border-box; margin: 0; padding: 0; }
     html { scroll-behavior: smooth; }
     body {
-      background: radial-gradient(ellipse 900px 600px at 85% -10%, rgba(111, 168, 255, 0.12), transparent),
-                  radial-gradient(ellipse 700px 500px at -10% 20%, rgba(157, 140, 255, 0.10), transparent),
+      background: radial-gradient(circle 800px at 85% -10%, rgba(99, 102, 241, 0.15), transparent),
+                  radial-gradient(circle 700px at -5% 25%, rgba(56, 189, 248, 0.10), transparent),
+                  radial-gradient(circle 600px at 50% 100%, rgba(16, 185, 129, 0.06), transparent),
                   var(--bg);
       color: var(--text);
       font-family: var(--sans);
@@ -244,9 +229,9 @@
     tr:last-child td { border-bottom: none; }
     tr:hover td { background: var(--surface-alt); color: var(--text); }
     .badge-diff { display: inline-block; padding: 3px 8px; border-radius: 6px; font-family: var(--mono); font-size: 11px; font-weight: 600; }
-    .badge-diff.Easy { background: rgba(127, 217, 171, 0.15); color: var(--green); }
-    .badge-diff.Medium { background: rgba(111, 168, 255, 0.15); color: var(--blue); }
-    .badge-diff.Hard { background: rgba(255, 154, 99, 0.15); color: var(--amber); }
+    .badge-diff.Easy { background: rgba(16, 185, 129, 0.14); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.25); }
+    .badge-diff.Medium { background: rgba(245, 158, 11, 0.14); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.25); }
+    .badge-diff.Hard { background: rgba(244, 63, 94, 0.14); color: #fb7185; border: 1px solid rgba(244, 63, 94, 0.25); }
     .del-btn { background: transparent; border: none; color: var(--dim); cursor: pointer; font-size: 14px; padding: 4px 8px; border-radius: 6px; }
     .del-btn:hover { color: var(--amber); background: rgba(255, 154, 99, 0.15); }
 
@@ -362,18 +347,17 @@
     </div>
 
 
-    <!-- Quant HUD Telemetry Strip -->
-    <div class="cyber-hud-strip">
+    <!-- Friendly Study Status & Motivation Bar -->
+    <div class="cyber-hud-strip" style="background:rgba(30, 41, 59, 0.7); border:1px solid var(--border); border-radius:12px; padding:10px 18px;">
       <div class="hud-stat-group">
-        <div class="hud-tag green"><span style="display:inline-block; width:6px; height:6px; border-radius:50%; background:var(--green); box-shadow:0 0 6px var(--green);"></span> ENGINE: <b>QUANT.V2 ACTIVE</b></div>
-        <div class="hud-tag violet">OPERATOR RANK: <b id="hud-rank-val">LVL 1 · CADET</b></div>
-        <div class="hud-tag blue">TOTAL XP: <b id="hud-xp-val">0 XP</b></div>
+        <div class="hud-tag green"><span style="display:inline-block; width:7px; height:7px; border-radius:50%; background:var(--green); box-shadow:0 0 8px rgba(16,185,129,0.6);"></span> <b style="color:var(--text);">Daily Focus Active</b></div>
+        <div class="hud-tag violet">Level: <b id="hud-rank-val" style="color:var(--violet);">Level 1 · Pattern Explorer</b></div>
+        <div class="hud-tag blue">Total XP: <b id="hud-xp-val" style="color:var(--blue);">0 XP</b></div>
       </div>
       <div class="hud-stat-group">
-        <div class="hud-tag">TARGET REPO: <b>327 ASSETS</b></div>
-        <div class="hud-tag">LATENCY: <b id="hud-latency-val" style="color:var(--dim);">0.18ms</b></div>
-        <div class="hud-tag" style="cursor:pointer;" onclick="toggleAudioFx()" title="Toggle Web Audio Synthesizer Feedback">
-          AUDIO FX: <b id="hud-audio-val" style="color:var(--green);">ON</b>
+        <div class="hud-tag">Curated Bank: <b style="color:var(--text);">327 Problems</b></div>
+        <div class="hud-tag" style="cursor:pointer;" onclick="toggleAudioFx()" title="Toggle Sound Feedback">
+          Chimes: <b id="hud-audio-val" style="color:var(--green);">ON</b>
         </div>
       </div>
     </div>
@@ -1516,9 +1500,9 @@
           <div class="cyber-mission-card" style="border-left: 3px solid ${isCompleted ? 'var(--green)' : (item.isSpacedReview ? 'var(--amber)' : 'var(--violet)')}; ${isCompleted ? 'box-shadow: 0 0 16px rgba(127,217,171,0.15);' : ''}">
             <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:8px; margin-bottom:10px;">
               <div>
-                <div style="display:flex; align-items:center; gap:8px; font-family:var(--mono); font-size:10px; text-transform:uppercase; letter-spacing:0.1em; color:${item.isSpacedReview ? 'var(--amber)' : 'var(--dim)'}; margin-bottom:4px;">
-                  <span>${item.isSpacedReview ? 'SLOT ' + (idx+1) + ' · SPACED REVISION' : 'SLOT ' + (idx+1) + ' · CURRICULUM'}</span>
-                  <span style="color:var(--dim);">//</span>
+                <div style="display:flex; align-items:center; gap:8px; font-family:var(--mono); font-size:10.5px; color:${item.isSpacedReview ? 'var(--amber)' : 'var(--muted)'}; margin-bottom:4px;">
+                  <span style="font-weight:600;">${item.isSpacedReview ? 'Problem ' + (idx+1) + ' · Spaced Review' : 'Problem ' + (idx+1) + ' · Daily Curriculum'}</span>
+                  <span style="color:var(--dim);">·</span>
                   <span style="color:var(--violet); font-weight:600;">${slotCode}</span>
                 </div>
                 <div style="font-size:16px; font-weight:700; color:var(--text); letter-spacing:-0.01em;">
@@ -1527,8 +1511,8 @@
               </div>
               <div style="display:flex; align-items:center; gap:8px;">
                 <span class="badge-diff ${item.difficulty}">${item.difficulty}</span>
-                <a href="${item.url}" target="_blank" rel="noopener noreferrer" onclick="playClickBeep()" style="font-family:var(--mono); font-size:11.5px; color:var(--blue); text-decoration:none; padding:4px 10px; border:1px solid rgba(111,168,255,0.3); border-radius:6px; background:rgba(111,168,255,0.08); transition:all 0.15s;">
-                  ↗ Open LeetCode
+                <a href="${item.url}" target="_blank" rel="noopener noreferrer" onclick="playClickBeep()" style="font-family:var(--mono); font-size:11.5px; color:var(--blue); text-decoration:none; padding:5px 12px; border:1px solid rgba(56,189,248,0.3); border-radius:8px; background:rgba(56,189,248,0.08); transition:all 0.15s; font-weight:500;">
+                  Solve on LeetCode ↗
                 </a>
               </div>
             </div>
@@ -1975,11 +1959,11 @@
         else xp += 10;
       });
 
-      let rank = "LVL 1 · RECURSION CADET";
-      if (xp >= 1800) rank = "LVL 5 · PRINCIPAL QUANT ARCHITECT";
-      else if (xp >= 800) rank = "LVL 4 · HFT SYSTEMS OPERATOR";
-      else if (xp >= 300) rank = "LVL 3 · SYSTEMS SPECIALIST";
-      else if (xp >= 100) rank = "LVL 2 · ALGORITHMIC INITIATE";
+      let rank = "Level 1 · Pattern Explorer";
+      if (xp >= 1800) rank = "Level 5 · Systems Architect";
+      else if (xp >= 800) rank = "Level 4 · Quant & DSA Specialist";
+      else if (xp >= 300) rank = "Level 3 · Interview Ready";
+      else if (xp >= 100) rank = "Level 2 · Algorithms Builder";
 
       return { xp, rank };
     }
