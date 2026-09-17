@@ -567,6 +567,7 @@ def cmd_search(query):
     print()
 
 def cmd_config(args):
+    C = get_colors()
     cfg = load_config()
     if not args:
         print(f"\n{C_BOLD}Supabase Cloud Configuration:{C_RESET}")
@@ -577,16 +578,17 @@ def cmd_config(args):
     if args[0] in ["set-key", "key"] and len(args) > 1:
         cfg["supabase_key"] = args[1].strip()
         save_config(cfg)
-        print(f"\n{C_GREEN}✓ Saved Supabase Anon Key!{C_RESET} Testing sync...")
+        print(f"\n{C['green']}✓ Saved Supabase Anon Key!{C_RESET} Testing sync...")
         data = load_data()
         sync_cloud(data)
-        print(f"{C_BLUE}✓ Two-way Cloud Sync active with website.{C_RESET}\n")
+        print(f"{C['secondary']}✓ Two-way Cloud Sync active with website.{C_RESET}\n")
 
 def cmd_sync():
+    C = get_colors()
     data = load_data()
     print(f"\nSyncing with Supabase Cloud...")
     sync_cloud(data)
-    print(f"{C_GREEN}✓ Sync completed!{C_RESET} {len(data.get('problems', []))} problem(s) in local ledger.\n")
+    print(f"{C['green']}✓ Sync completed!{C_RESET} {len(data.get('problems', []))} problem(s) in local ledger.\n")
 
 def cmd_history():
     C = get_colors()

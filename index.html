@@ -867,7 +867,7 @@
 
     function initSupabase() {
       const url = localStorage.getItem('WOOLF_SB_URL') || 'https://xyeivscujrvtnfnjxakc.supabase.co';
-      const key = localStorage.getItem('WOOLF_SB_KEY');
+      const key = localStorage.getItem('WOOLF_SB_KEY') || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh5ZWl2c2N1anJ2dG5mbmp4YWtjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc0ODkyMTIsImV4cCI6MjEwMzA2NTIxMn0.gOJxNy854VyzLRZ6sPm34ur6WCrPDZ8DKLvcO-J87J4';
 
       if (url && key && window.supabase) {
         try {
