@@ -881,16 +881,20 @@
           });
           document.getElementById('config-banner').classList.add('hidden');
           
-          // Persistent auth change listener to keep user logged in across reloads
           sbClient.auth.onAuthStateChange(async (event, session) => {
             if (session && session.user) {
               currentUser = session.user;
               updateAuthUI(true);
               await ensureUserInitialized();
-              fetchCloudData();
+              await fetchCloudData();
+              setupRealtimeSubscriptions();
             } else if (event === 'SIGNED_OUT') {
               currentUser = null;
               updateAuthUI(false);
+              if (realtimeChannel) {
+                sbClient.removeChannel(realtimeChannel);
+                realtimeChannel = null;
+              }
               loadLocalFallback();
             }
           });
@@ -988,6 +992,28 @@
       }
     }
 
+    let realtimeChannel = null;
+
+    function setupRealtimeSubscriptions() {
+      if (!sbClient || !currentUser || realtimeChannel) return;
+      try {
+        realtimeChannel = sbClient
+          .channel('realtime_user_sync_' + currentUser.id)
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'problems', filter: `user_id=eq.${currentUser.id}` }, () => {
+            fetchCloudData();
+          })
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'failures', filter: `user_id=eq.${currentUser.id}` }, () => {
+            fetchCloudData();
+          })
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'projects', filter: `user_id=eq.${currentUser.id}` }, () => {
+            fetchCloudData();
+          })
+          .subscribe();
+      } catch (e) {
+        console.warn("Realtime setup notice:", e);
+      }
+    }
+
     // --- Cloud Data Sync ---
     async function fetchCloudData() {
       if (!sbClient || !currentUser) return;
@@ -1007,24 +1033,22 @@
         const { data: problems } = await sbClient.from('problems').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false });
         if (problems) {
           localData.problems = problems;
-          saveLocal();
-          renderProblemsTable();
         }
 
         const { data: failures } = await sbClient.from('failures').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false });
         if (failures) {
           localData.failures = failures;
-          saveLocal();
-          renderFailures();
         }
 
         const { data: projects } = await sbClient.from('projects').select('*').eq('user_id', currentUser.id).order('project_num', { ascending: true });
         if (projects && projects.length > 0) {
           localData.projects = projects;
-          renderProjects();
         } else {
           seedDefaultProjects();
         }
+
+        saveLocal();
+        renderAll();
       } catch (e) {
         console.warn("Cloud sync fallback:", e);
       }
