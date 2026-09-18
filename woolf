@@ -215,13 +215,11 @@ def sync_cloud(data):
     import urllib.request, urllib.error
     headers = {
         "apikey": key,
-        "Authorization": f"Bearer {token if token else key}",
+        "Authorization": f"Bearer {key}",
         "Content-Type": "application/json"
     }
     try:
         query_url = f"{url}/rest/v1/problems?select=*&order=created_at.desc"
-        if user_id:
-            query_url += f"&user_id=eq.{user_id}"
         req = urllib.request.Request(query_url, headers=headers)
         with urllib.request.urlopen(req, timeout=4) as response:
             if response.status == 200:
@@ -237,8 +235,6 @@ def sync_cloud(data):
 
     try:
         query_url = f"{url}/rest/v1/failures?select=*&order=created_at.desc"
-        if user_id:
-            query_url += f"&user_id=eq.{user_id}"
         req = urllib.request.Request(query_url, headers=headers)
         with urllib.request.urlopen(req, timeout=4) as response:
             if response.status == 200:
@@ -256,7 +252,6 @@ def push_problem_to_cloud(entry):
     cfg = load_config()
     url = cfg.get("supabase_url")
     key = cfg.get("supabase_key")
-    token, user_id = get_auth_token()
     if not url or not key:
         return
     import urllib.request, urllib.error
@@ -269,15 +264,13 @@ def push_problem_to_cloud(entry):
             "source": entry.get("source", "cli"),
             "logged_at": entry["logged_at"].split("T")[0]
         }
-        if user_id:
-            payload_dict["user_id"] = user_id
         payload = json.dumps(payload_dict).encode('utf-8')
         req = urllib.request.Request(
             f"{url}/rest/v1/problems",
             data=payload,
             headers={
                 "apikey": key,
-                "Authorization": f"Bearer {token if token else key}",
+                "Authorization": f"Bearer {key}",
                 "Content-Type": "application/json",
                 "Prefer": "return=minimal"
             }
@@ -291,7 +284,6 @@ def push_failure_to_cloud(fail_entry):
     cfg = load_config()
     url = cfg.get("supabase_url")
     key = cfg.get("supabase_key")
-    token, user_id = get_auth_token()
     if not url or not key:
         return
     import urllib.request, urllib.error
@@ -302,15 +294,13 @@ def push_failure_to_cloud(fail_entry):
             "reason": fail_entry["reason"],
             "logged_at": fail_entry["logged_at"].split("T")[0]
         }
-        if user_id:
-            payload_dict["user_id"] = user_id
         payload = json.dumps(payload_dict).encode('utf-8')
         req = urllib.request.Request(
             f"{url}/rest/v1/failures",
             data=payload,
             headers={
                 "apikey": key,
-                "Authorization": f"Bearer {token if token else key}",
+                "Authorization": f"Bearer {key}",
                 "Content-Type": "application/json",
                 "Prefer": "return=minimal"
             }

@@ -249,7 +249,7 @@
       <div class="stat-pill">Today: <b id="stat-today">0/3</b></div>
       <div class="stat-pill">CF: <b id="stat-cf">--</b></div>
       <div id="auth-header-btn">
-        <button class="auth-btn" onclick="openAuthModal('signup')">Sign Up / In</button>
+        <span id="cloud-status-badge" style="font-size:11px; font-family:var(--mono); color:var(--muted); padding:4px 10px; border:1px solid var(--border); border-radius:20px; white-space:nowrap;">⟳ Connecting...</span>
       </div>
     </div>
   </header>
@@ -257,7 +257,7 @@
   <div class="app-container">
 
     <!-- Config Prompt (if keys not in localStorage) -->
-    <div id="config-banner" class="card" style="border-color:var(--border-strong); background:rgba(169,150,255,0.06); margin-bottom:18px;">
+    <div id="config-banner" class="card hidden" style="display:none;">
       <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
         <div>
           <div style="font-weight:600; color:var(--violet); font-size:14px;">Connect Supabase Cloud Sync & Mailers</div>
@@ -865,7 +865,7 @@
       setTimeout(() => { t.style.display = 'none'; }, 3000);
     }
 
-    function initSupabase() {
+    async function initSupabase() {
       const url = localStorage.getItem('WOOLF_SB_URL') || 'https://xyeivscujrvtnfnjxakc.supabase.co';
       const key = localStorage.getItem('WOOLF_SB_KEY') || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh5ZWl2c2N1anJ2dG5mbmp4YWtjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc0ODkyMTIsImV4cCI6MjEwMzA2NTIxMn0.gOJxNy854VyzLRZ6sPm34ur6WCrPDZ8DKLvcO-J87J4';
 
@@ -881,30 +881,17 @@
           });
           document.getElementById('config-banner').classList.add('hidden');
           
-          sbClient.auth.onAuthStateChange(async (event, session) => {
-            if (session && session.user) {
-              currentUser = session.user;
-              updateAuthUI(true);
-              await ensureUserInitialized();
-              await fetchCloudData();
-              setupRealtimeSubscriptions();
-            } else if (event === 'SIGNED_OUT') {
-              currentUser = null;
-              updateAuthUI(false);
-              if (realtimeChannel) {
-                sbClient.removeChannel(realtimeChannel);
-                realtimeChannel = null;
-              }
-              loadLocalFallback();
-            }
-          });
-
-          checkAuthSession();
+          // No login needed - fetch cloud data directly with anon key
+          document.getElementById('config-banner').classList.add('hidden');
+          await fetchCloudData();
+          setupRealtimeSubscriptions();
+          const badge = document.getElementById('cloud-status-badge');
+          if (badge) { badge.textContent = '☁ Cloud Synced'; badge.style.color = '#7fd9ab'; badge.style.borderColor = '#7fd9ab33'; }
         } catch (e) {
           console.warn("Supabase init error:", e);
+          loadLocalFallback();
         }
       } else {
-        if (!key) document.getElementById('config-banner').classList.remove('hidden');
         loadLocalFallback();
       }
     }
@@ -995,17 +982,17 @@
     let realtimeChannel = null;
 
     function setupRealtimeSubscriptions() {
-      if (!sbClient || !currentUser || realtimeChannel) return;
+      if (!sbClient || realtimeChannel) return;
       try {
         realtimeChannel = sbClient
-          .channel('realtime_user_sync_' + currentUser.id)
-          .on('postgres_changes', { event: '*', schema: 'public', table: 'problems', filter: `user_id=eq.${currentUser.id}` }, () => {
+          .channel('realtime_anon_sync')
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'problems' }, () => {
             fetchCloudData();
           })
-          .on('postgres_changes', { event: '*', schema: 'public', table: 'failures', filter: `user_id=eq.${currentUser.id}` }, () => {
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'failures' }, () => {
             fetchCloudData();
           })
-          .on('postgres_changes', { event: '*', schema: 'public', table: 'projects', filter: `user_id=eq.${currentUser.id}` }, () => {
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'projects' }, () => {
             fetchCloudData();
           })
           .subscribe();
@@ -1016,31 +1003,20 @@
 
     // --- Cloud Data Sync ---
     async function fetchCloudData() {
-      if (!sbClient || !currentUser) return;
+      if (!sbClient) return;
 
       try {
-        const { data: profile } = await sbClient.from('profiles').select('*').eq('id', currentUser.id).single();
-        if (profile) {
-          localData.profile = profile;
-          document.getElementById('stat-streak').innerText = profile.streak_current || 0;
-          document.getElementById('streak-stat').innerText = `${profile.streak_current || 0} Days`;
-          if (profile.cf_handle) {
-            document.getElementById('cf-handle-input').value = profile.cf_handle;
-            fetchCFRating(profile.cf_handle);
-          }
-        }
-
-        const { data: problems } = await sbClient.from('problems').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false });
+        const { data: problems } = await sbClient.from('problems').select('*').order('created_at', { ascending: false });
         if (problems) {
           localData.problems = problems;
         }
 
-        const { data: failures } = await sbClient.from('failures').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false });
+        const { data: failures } = await sbClient.from('failures').select('*').order('created_at', { ascending: false });
         if (failures) {
           localData.failures = failures;
         }
 
-        const { data: projects } = await sbClient.from('projects').select('*').eq('user_id', currentUser.id).order('project_num', { ascending: true });
+        const { data: projects } = await sbClient.from('projects').select('*').order('project_num', { ascending: true });
         if (projects && projects.length > 0) {
           localData.projects = projects;
         } else {

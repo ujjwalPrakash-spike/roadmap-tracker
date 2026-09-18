@@ -59,31 +59,29 @@ ALTER TABLE public.problems ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.failures ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.projects ENABLE ROW LEVEL SECURITY;
 
--- Idempotent RLS Policies for authenticated users and service_role
+-- user_id is optional so CLI and website can write without login session
+ALTER TABLE public.problems ALTER COLUMN user_id DROP NOT NULL;
+ALTER TABLE public.failures ALTER COLUMN user_id DROP NOT NULL;
+ALTER TABLE public.projects ALTER COLUMN user_id DROP NOT NULL;
+
+-- Passwordless open access policies (personal single-user app - anon key is sufficient)
 DROP POLICY IF EXISTS "Allow users all actions on profile" ON public.profiles;
-CREATE POLICY "Allow users all actions on profile" ON public.profiles FOR ALL USING (auth.uid() = id) WITH CHECK (auth.uid() = id);
-
 DROP POLICY IF EXISTS "Allow users all actions on problems" ON public.problems;
-CREATE POLICY "Allow users all actions on problems" ON public.problems FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
-
 DROP POLICY IF EXISTS "Allow users all actions on failures" ON public.failures;
-CREATE POLICY "Allow users all actions on failures" ON public.failures FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
-
 DROP POLICY IF EXISTS "Allow users all actions on projects" ON public.projects;
-CREATE POLICY "Allow users all actions on projects" ON public.projects FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
-
--- Also allow service_role key to access all rows for scheduled mailers
 DROP POLICY IF EXISTS "Service role profile" ON public.profiles;
-CREATE POLICY "Service role profile" ON public.profiles FOR ALL TO service_role USING (true) WITH CHECK (true);
-
 DROP POLICY IF EXISTS "Service role problems" ON public.problems;
-CREATE POLICY "Service role problems" ON public.problems FOR ALL TO service_role USING (true) WITH CHECK (true);
-
 DROP POLICY IF EXISTS "Service role failures" ON public.failures;
-CREATE POLICY "Service role failures" ON public.failures FOR ALL TO service_role USING (true) WITH CHECK (true);
-
 DROP POLICY IF EXISTS "Service role projects" ON public.projects;
-CREATE POLICY "Service role projects" ON public.projects FOR ALL TO service_role USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "Allow anon all actions on profiles" ON public.profiles;
+DROP POLICY IF EXISTS "Allow anon all actions on problems" ON public.problems;
+DROP POLICY IF EXISTS "Allow anon all actions on failures" ON public.failures;
+DROP POLICY IF EXISTS "Allow anon all actions on projects" ON public.projects;
+
+CREATE POLICY "Allow anon all actions on profiles" ON public.profiles FOR ALL TO anon, authenticated, service_role USING (true) WITH CHECK (true);
+CREATE POLICY "Allow anon all actions on problems" ON public.problems FOR ALL TO anon, authenticated, service_role USING (true) WITH CHECK (true);
+CREATE POLICY "Allow anon all actions on failures" ON public.failures FOR ALL TO anon, authenticated, service_role USING (true) WITH CHECK (true);
+CREATE POLICY "Allow anon all actions on projects" ON public.projects FOR ALL TO anon, authenticated, service_role USING (true) WITH CHECK (true);
 
 -- Trigger: Safe & exception-guarded so it NEVER blocks signup
 CREATE OR REPLACE FUNCTION public.handle_new_user()
